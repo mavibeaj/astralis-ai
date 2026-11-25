@@ -1,0 +1,12 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {validateBirth} from '../src/lib/birth-input.mjs';
+const sample={date:'1990-02-28',place:'Lima, Peru',time:'08:30',unknownTime:false};
+const check=x=>validateBirth({...sample,...x},'2026-11-25');
+test('valid input',()=>assert.equal(check({}),null));
+test('unknown time permitted',()=>assert.equal(check({unknownTime:true,time:''}),null));
+test('missing known time rejected',()=>assert.equal(check({time:''}),'time'));
+test('invalid time rejected',()=>assert.equal(check({time:'24:00'}),'time'));
+test('impossible calendar date rejected',()=>assert.equal(check({date:'1990-02-30'}),'date'));
+test('future date rejected',()=>assert.equal(check({date:'2027-01-01'}),'date'));
+test('empty place rejected',()=>assert.equal(check({place:' '}),'place'));
