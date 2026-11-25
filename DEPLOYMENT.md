@@ -1,22 +1,17 @@
-# Static preview deployment
+# Deployment strategy
 
-The free matching prototype runs client-side. No production launch or payment activation is authorized by this guide.
+Decision: Vercel is the intended commercial hosting platform. Development remains at zero incremental cost using GitHub Actions and local testing. Do not deploy the commercial project to Hobby without confirming eligibility under current Vercel terms. Do not upgrade, deploy to production, attach a domain or activate payments without owner approval.
 
-## Cloudflare Pages
+## Development
 
-Connect only `mavibeaj/astralis-ai` in the Cloudflare dashboard under Workers & Pages > Pages > Connect to Git. Use `feature/cosmic-match-foundation` as the preview branch; do not merge main or attach a custom domain. For a dedicated test-only Pages project the selected branch may be the project's default deployment branch; this is not a commercial production release.
+The current free prototype is client-side and exports static HTML via Next.js. Run `npm install`, `npm run typecheck`, `npm test`, `npm run build` and verify `out/index.html`. Static export is a development convenience, not a permanent architecture constraint. Remove it when introducing server routes and verify the resulting build before release.
 
-- Framework: Next.js (Static HTML Export)
-- Build command: `npm run build`
-- Output directory: `out`
-- Root: repository root
-- Environment: `NODE_VERSION=22`
-- No API keys or payment credentials required.
+## Vercel release gate
 
-Before creating resources, confirm Free plan and no paid add-ons. Review access and visibility: the pages.dev URL may be public. Use synthetic birth data for smoke tests. Do not index the prototype; existing metadata disables indexing, but robots metadata is not access control.
+Confirm eligible plan, spending controls, Git integration, reviewed commit, environment separation and preview access. Use Next.js framework detection. Configure secrets only through protected environment settings. No real customer data in preview. No commercial production release without explicit approval.
 
 ## Acceptance
 
-Run `npm install`, `npm run typecheck`, `npm test`, `npm run build`; verify `out/index.html`. On the preview URL test EN/ES, adult consent, known and unknown birth time, invalid time zone, clearing inputs, score display, and both PNG card sizes on desktop and mobile. Check that premium purchases remain disabled and no birth data is transmitted. Record the deployment URL and commit only after actual verification.
+Verify EN/ES, adult consent, known and unknown birth time, invalid time zone, clearing inputs, score display, and both PNG card sizes on desktop and mobile. Check premium purchases remain disabled until release approval and that free birth data is not transmitted. Record actual preview URL and commit when verified. Robots metadata is not access control.
 
-References: https://developers.cloudflare.com/pages/framework-guides/nextjs/deploy-a-static-nextjs-site/ and https://developers.cloudflare.com/pages/platform/limits/.
+Cloudflare Pages is an optional static-hosting fallback, not the selected provider. No Cloudflare resources were created.
