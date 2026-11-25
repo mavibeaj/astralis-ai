@@ -8,7 +8,7 @@ create table public.astralis_profiles (
 create table public.astralis_matches (
  id uuid primary key default gen_random_uuid(),
  user_id uuid not null references auth.users(id) on delete cascade,
- relationship text not null check(relationship in ('partner','crush','friend')),
+ relationship text not null check(relationship in ('partner','crush','friendship')),
  engine_version text not null,
  symbolic_index integer not null check(symbolic_index between 0 and 100),
  created_at timestamptz not null default now(),
