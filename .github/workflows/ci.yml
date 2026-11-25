@@ -7,8 +7,13 @@ permissions:
   contents: read
 jobs:
   verify:
+    name: ${{ matrix.check }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [test, typecheck, build]
     env:
       NEXT_TELEMETRY_DISABLED: '1'
     steps:
@@ -16,8 +21,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install dependencies (bootstrap until lockfile committed)
+      - name: Install dependencies
         run: if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
-      - run: npm test
-      - run: npm run typecheck
-      - run: npm run build
+      - name: Run check and retain diagnostics
+        shell: bash
+        run: |
+          set +e
+          npm run "${{ matrix.check }}" > diagnostics.txt 2>&1
+          result=$?
+          cat diagnostics.txt
+          if [ "$result" -ne 0 ]; then
+            tail -n 60 diagnostics.txt >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::${{ matrix.check }} failed; inspect job summary"
+          fi
+          exit "$result"
