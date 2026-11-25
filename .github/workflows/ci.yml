@@ -45,3 +45,16 @@ jobs:
           name: diagnostics-${{ matrix.check }}
           path: diagnostics.txt
           if-no-files-found: warn
+
+      - name: Verify static entrypoint
+        if: matrix.check == 'build'
+        run: test -s out/index.html
+      - name: Upload runnable static website
+        if: matrix.check == 'build'
+        uses: actions/upload-artifact@v4
+        with:
+          name: astralis-web-preview
+          path: out/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
