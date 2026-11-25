@@ -12,7 +12,8 @@
   "dependencies": {
     "next": "^16.0.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "astronomy-engine": "2.1.19"
   },
   "devDependencies": {
     "typescript": "^5.9.0",
