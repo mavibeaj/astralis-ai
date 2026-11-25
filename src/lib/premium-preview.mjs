@@ -1,0 +1,11 @@
+import {premiumReportInput} from './premium-contract.mjs';
+import {interpretDimensions} from './interpretation.mjs';
+const labels={en:['Emotional connection','Communication','Symbolic attraction','Stability','Growth'],es:['Conexión emocional','Comunicación','Atracción simbólica','Estabilidad','Crecimiento']};
+const prompts={en:['Each share one way you like to receive support.','Take turns describing a disagreement without interrupting.','Choose a shared activity that both genuinely enjoy.','Discuss one expectation and one personal boundary each.','Name one difference you would like to understand better.'],es:['Cada persona comparte una forma en la que prefiere recibir apoyo.','Describan un desacuerdo por turnos, sin interrumpirse.','Elijan una actividad compartida que ambos disfruten.','Conversen sobre una expectativa y un límite personal de cada uno.','Identifiquen una diferencia que quieran comprender mejor.']};
+export function buildPremiumPreview(result,locale,relationship){
+ const input=premiumReportInput(result,locale,relationship);
+ const reflection=interpretDimensions(result.result.dimensions,locale);
+ const es=locale==='es';
+ const themes=Object.entries(input.dimensions).map(([key,score],i)=>({key,label:labels[locale][i],score,reflection:score>50?(es?'Tema simbólico para explorar como posible afinidad.':'Symbolic theme to explore as possible affinity.'):score<50?(es?'Tema simbólico para explorar con curiosidad, sin asumir conflictos.':'Symbolic theme to explore with curiosity, without assuming conflict.'):(es?'Tema simbólico sin inclinación marcada.':'Symbolic theme without a marked tendency.'),activity:prompts[locale][i]}));
+ return {version:'premium-preview-0.1',kind:'deterministic-preview',locale,relationship,index:input.index,summary:es?'Lectura simbólica de cinco dimensiones para iniciar conversaciones.':'A symbolic reading of five dimensions to start conversations.',themes,strength:reflection.strength?.key??null,challenge:reflection.challenge?.key??null,limitations:es?'No es una predicción científica ni una evaluación de la relación. Vista previa sin IA generativa.':'Not a scientific prediction or relationship assessment. Preview without generative AI.'};
+}
