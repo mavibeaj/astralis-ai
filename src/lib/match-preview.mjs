@@ -11,10 +11,12 @@ export function matchPreview(a,b,cutoff){
   const charts=[];
   for(const time of times){
    let resolved;try{resolved=resolveLocalTime(p.date,time,p.zone)}catch{return {status:'invalid-time-zone-or-date'}}
-   if(resolved.status!=='unique'){if(!p.unknownTime)return {status:resolved.status};continue}
-   const chart=calculateUtc(new Date(resolved.candidates[0]));
-   if(p.unknownTime)delete chart.longitudes.Moon;
-   charts.push(chart);
+   if(resolved.status!=='unique'&&!p.unknownTime)return {status:resolved.status};
+   for(const instant of resolved.candidates){
+    const chart=calculateUtc(new Date(instant));
+    if(p.unknownTime)delete chart.longitudes.Moon;
+    charts.push(chart);
+   }
   }
   if(!charts.length)return {status:'nonexistent'};
   samples.push(charts);
