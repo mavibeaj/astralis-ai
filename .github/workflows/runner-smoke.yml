@@ -1,0 +1,17 @@
+name: Runner smoke
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Shell and runtime availability
+        run: |
+          echo 'Runner started'
+          node --version
+          npm --version
+          echo 'Runner smoke passed' >> "$GITHUB_STEP_SUMMARY"
