@@ -36,10 +36,10 @@ def country(item):
     with zipfile.ZipFile(io.BytesIO(fetch(code+'.zip'))) as z:
         with z.open(code+'.txt') as f:
             for r in csv.reader(io.TextIOWrapper(f,encoding='utf-8'),delimiter='\t'):
-                if len(r)<19 or r[6]!='P' or not r[17] or not r[1]: continue
+                if len(r)<19 or r[6] not in ('P','A') or not r[17] or not r[1]: continue
                 region=admin1.get(code+'.'+r[10],'')
                 district=admin2.get(code+'.'+r[10]+'.'+r[11],'')
-                entry=[r[0],r[1],region,district,r[17],int(r[14] or 0)]
+                entry=[r[0],r[1],region,district,r[17],int(r[14] or 0),float(r[4]),float(r[5])]
                 aliases={norm(r[1]),norm(r[2])}
                 # Include alternate names including local scripts.
                 aliases.update(norm(a) for a in r[3].split(',') if a)
