@@ -27,6 +27,9 @@ jobs:
       - name: Generate Peru geography fixture from GeoNames
         if: matrix.check == 'build'
         run: GEOGRAPHY_COUNTRIES=PE python3 scripts/build-geography.py
+      - name: Validate generated geography catalog
+        if: matrix.check == 'build'
+        run: node --test tests/geography-catalog.test.mjs
       - name: Runtime diagnostics
         run: node --version && npm --version
       - name: Run check and retain diagnostics
