@@ -15,7 +15,8 @@ stay in a single file and only dense prefixes (e.g. "sa", "san") get deeper keys
 import gzip, json, math, pathlib, unicodedata, collections
 
 TARGET_GZ = 200 * 1024        # aim below the approved 250 KB compressed per shard
-SPLIT_RAW = 600 * 1024        # raw payload above which a prefix is subdivided
+SPLIT_RAW = 400 * 1024        # raw payload above which a prefix is subdivided
+MAX_KEY = 16                  # deepest prefix length
 MAX_FILES = 19000             # Cloudflare Pages: 20,000 files per deployment incl. app assets
 MAX_FILE = 24 * 1024 * 1024   # Cloudflare Pages: 25 MiB per file
 
@@ -66,8 +67,9 @@ def plan_country(records):
             for k in keys:
                 load[k] += sizes[i]
         # Only split keys that can actually be subdivided (aliases longer than the key).
-        heavy = {k for k, v in load.items() if v > SPLIT_RAW and k not in split and k in extendable}
-        if not heavy or max(len(chars(k)) for k in heavy) > 6:
+        # Keys are deepened independently; one very long dense prefix never stops the others.
+        heavy = {k for k, v in load.items() if v > SPLIT_RAW and k not in split and k in extendable and len(chars(k)) < MAX_KEY}
+        if not heavy:
             break
         split |= heavy
     total = sum(load.values())

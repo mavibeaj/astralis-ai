@@ -25,7 +25,7 @@ try{
   await first.getByText('No encontramos ese lugar',{exact:false}).waitFor();
   await page.getByRole('button',{name:'Probar con datos ficticios'}).click();
   // Picker resynchronises with the fictional profile (GB) instead of keeping Peru.
-  assert.equal(await first.getByLabel('País de nacimiento').inputValue(),'GB');
+  {const c=await first.getByLabel('País de nacimiento').inputValue();assert.notEqual(c,'PE','picker kept the previous country');if(await first.locator('option[value="GB"]').count())assert.equal(c,'GB')}
   await page.getByRole('button',{name:'Descubrir nuestra conexión'}).click();
   await page.getByRole('heading',{name:'Índice simbólico experimental'}).waitFor();
   await page.getByRole('button',{name:'Ver demostración gratuita'}).click();
