@@ -2,6 +2,7 @@ import {resolveLocalTime} from './birth-time.mjs';
 import {natalAngles,validCoordinates,wholeSignHouse} from './natal-angles.mjs';
 import {calculateUtc} from './ephemeris.mjs';
 import {compatibility} from './compatibility.mjs';
+import {placidusCusps,houseOf,meanNode} from './houses.mjs';
 import {validateBirth} from './birth-input.mjs';
 // Unknown-time results are sampled estimates, not guaranteed mathematical bounds.
 export function matchPreview(a,b,cutoff){
@@ -19,14 +20,17 @@ export function matchPreview(a,b,cutoff){
     if(!p.unknownTime&&validCoordinates(p.latitude,p.longitude)){
      chart.angles=natalAngles(new Date(instant),p.latitude,p.longitude);
      if(chart.angles)chart.houses=Object.fromEntries(Object.entries(chart.longitudes).map(([key,lon])=>[key,wholeSignHouse(lon,chart.angles.ascendant)]));
+     const placidus=chart.angles?placidusCusps(new Date(instant),p.latitude,p.longitude,chart.angles):null;
+     if(placidus)chart.placidus={cusps:placidus.cusps,houses:Object.fromEntries(Object.entries(chart.longitudes).map(([key,lon])=>[key,houseOf(lon,placidus.cusps)]))};
     }
+    {const north=meanNode(new Date(instant));chart.nodes={type:'mean',north,south:(north+180)%360}}
     charts.push(chart);
    }
   }
   if(!charts.length)return {status:'nonexistent'};
   samples.push(charts);
  }
- const limitations=['Local angles and whole-sign houses require known time and coordinates; no Placidus, nodes or Chiron.','Planet longitudes and ASC/MC cross-checked against Swiss Ephemeris (Moshier) within 20 arcseconds for 12 reference cases; broader validation pending.','Symbolic score, not a scientific probability.'];
+ const limitations=['Local angles and houses require known time and coordinates; Placidus omitted beyond 66° latitude; mean lunar node only; no Chiron.','Planet longitudes and ASC/MC cross-checked against Swiss Ephemeris (Moshier) within 20 arcseconds for 12 reference cases; broader validation pending.','Symbolic score, not a scientific probability.'];
  if(a.date<'1970-01-01'||b.date<'1970-01-01')limitations.push('Birth before 1970: historical time-zone offsets vary between tzdb builds for some zones; verify the local offset.');
  if(a.unknownTime||b.unknownTime){
   const results=samples[0].flatMap(x=>samples[1].map(y=>compatibility(x.longitudes,y.longitudes)));
