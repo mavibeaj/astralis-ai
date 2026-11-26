@@ -26,7 +26,8 @@ export function matchPreview(a,b,cutoff){
   if(!charts.length)return {status:'nonexistent'};
   samples.push(charts);
  }
- const limitations=['Local angles and whole-sign houses require known time and coordinates; no Placidus, nodes or Chiron.','Prototype pending independent ephemeris validation.','Symbolic score, not a scientific probability.'];
+ const limitations=['Local angles and whole-sign houses require known time and coordinates; no Placidus, nodes or Chiron.','Planet longitudes and ASC/MC cross-checked against Swiss Ephemeris (Moshier) within 20 arcseconds for 12 reference cases; broader validation pending.','Symbolic score, not a scientific probability.'];
+ if(a.date<'1970-01-01'||b.date<'1970-01-01')limitations.push('Birth before 1970: historical time-zone offsets vary between tzdb builds for some zones; verify the local offset.');
  if(a.unknownTime||b.unknownTime){
   const results=samples[0].flatMap(x=>samples[1].map(y=>compatibility(x.longitudes,y.longitudes)));
   const range=values=>{const numbers=values.filter(x=>typeof x==='number'&&Number.isFinite(x));return numbers.length?[Math.min(...numbers),Math.max(...numbers)]:null};
