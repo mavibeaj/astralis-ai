@@ -1,18 +1,104 @@
 'use client';
-import {useEffect,useState} from 'react';
-type Place=[string,string,string,string,string,number,number,number];
-type Entry=[Place,string[]];
-type Country=[string,string];
-const normalize=(s:string)=>s.toLowerCase().normalize('NFKD').replace(/\p{M}/gu,'').replace(/ß/g,'ss').replace(/ς/g,'σ');
-function bucket(s:string){let h=0;for(const byte of new TextEncoder().encode(Array.from(normalize(s)).slice(0,2).join('')))h=(h*31+byte)%64;return String(h)}
-export default function LocationPicker({es,place,zone,latitude,longitude,onChange}:{es:boolean;place:string;zone:string;latitude?:number;longitude?:number;onChange:(place:string,zone:string,latitude?:number,longitude?:number)=>void}){
- const [countries,setCountries]=useState<Country[]>([]),[country,setCountry]=useState(''),[query,setQuery]=useState(''),[rows,setRows]=useState<Place[]>([]),[state,setState]=useState(''),[manual,setManual]=useState(false);
- useEffect(()=>{const c=new AbortController();fetch('/geography/countries.json',{signal:c.signal}).then(r=>{if(!r.ok)throw Error();return r.json()}).then(setCountries).catch(()=>{});return()=>c.abort()},[]);
- useEffect(()=>{setRows([]);setState('');const q=normalize(query.trim());if(!country||Array.from(q).length<2||manual)return;const c=new AbortController();setState('loading');const timer=setTimeout(async()=>{try{const r=await fetch('/geography/'+country+'/'+bucket(q)+'.json',{signal:c.signal});if(r.status===404){setState('empty');return}if(!r.ok)throw Error();const entries:Entry[]=await r.json();const map=new Map<string,Place>();for(const [p,aliases] of entries)if(aliases.some(a=>a.startsWith(q)))map.set(p[0],p);setRows([...map.values()].sort((a,b)=>Number(normalize(b[1])===q)-Number(normalize(a[1])===q)||b[5]-a[5]).slice(0,30));setState(map.size?'ready':'empty')}catch{if(!c.signal.aborted)setState('error')}},250);return()=>{clearTimeout(timer);c.abort()}},[country,query,manual]);
- const label=es?'Lugar de nacimiento':'Birthplace';
- return <div className="location-picker"><label>{es?'País de nacimiento':'Birth country'}<select value={country} onChange={e=>{setCountry(e.target.value);setQuery('');onChange('','')}}><option value="">{es?'Seleccionar país':'Select country'}</option>{countries.map(([code,name])=><option key={code} value={code}>{(()=>{try{return new Intl.DisplayNames([es?'es':'en'],{type:'region'}).of(code)||name}catch{return name}})()}</option>)}</select></label>
- {!manual&&<><label>{es?'Ciudad, distrito o pueblo':'City, district or village'}<input value={query} disabled={!country} placeholder={es?'Escribe al menos 2 letras':'Type at least 2 letters'} onChange={e=>{setQuery(e.target.value);onChange('','')}}/></label>{state==='loading'&&<small role="status">{es?'Buscando…':'Searching…'}</small>}{(state==='empty'||state==='error')&&<small role="status">{es?'No se encontraron resultados. Usa la opción manual.':'No results available. Use manual entry.'}</small>}{rows.length>0&&<div className="location-results">{rows.map(p=><button type="button" key={p[0]} onClick={()=>{onChange([p[1],p[3],p[2],countries.find(c=>c[0]===country)?.[1]].filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i).join(', '),p[4],p[6],p[7]);setQuery('');setRows([])}}><strong>{p[1]}</strong><small>{[p[3],p[2]].filter(Boolean).join(' · ')}</small></button>)}</div>}</>}
- <button type="button" onClick={()=>setManual(v=>!v)}>{manual?(es?'Buscar en catálogo':'Search catalog'):(es?'Ingresar lugar manualmente':'Enter place manually')}</button>
- <label>{label}<input required maxLength={150} readOnly={!manual&&!!place} value={place} onChange={e=>onChange(e.target.value,'')}/></label><label>{es?'Zona horaria de nacimiento':'Birth time zone'}<input required list="astralis-timezones" value={zone} onChange={e=>onChange(place,e.target.value,latitude,longitude)} placeholder="America/Lima"/></label>
- <div className="profiles"><label>{es?'Latitud':'Latitude'}<input type="number" min="-90" max="90" step="any" value={latitude??''} onChange={e=>onChange(place,zone,e.target.value===''?undefined:Number(e.target.value),longitude)}/></label><label>{es?'Longitud':'Longitude'}<input type="number" min="-180" max="180" step="any" value={longitude??''} onChange={e=>onChange(place,zone,latitude,e.target.value===''?undefined:Number(e.target.value))}/></label></div><small>{es?'Datos geográficos: GeoNames (CC BY 4.0). Las solicitudes del catálogo pueden quedar en registros del alojamiento.':'Geographic data: GeoNames (CC BY 4.0). Catalog requests may be logged by hosting.'} <a href="https://www.geonames.org/" target="_blank" rel="noreferrer">GeoNames</a></small></div>
+import {useEffect, useMemo, useRef, useState} from 'react';
+import {cachedLoader, parseManifest, searchPlaces, type CatalogCountry, type PlaceResult} from '../lib/geo-search.mjs';
+
+export type PlaceSelection = {place: string; zone: string; latitude?: number; longitude?: number; country?: string; geonameId?: string};
+type Props = PlaceSelection & {es: boolean; idPrefix: string; onChange: (v: PlaceSelection) => void};
+type CatalogState = 'loading' | 'ready' | 'unavailable';
+type SearchState = 'idle' | 'short' | 'loading' | 'ready' | 'empty' | 'more' | 'error';
+
+const load = cachedLoader();
+let manifestPromise: Promise<CatalogCountry[]> | null = null;
+function loadManifest() {
+  manifestPromise ??= load('/geography/countries.json').then(parseManifest).catch(e => {manifestPromise = null; throw e;});
+  return manifestPromise;
+}
+const regionName = (code: string, fallback: string, es: boolean) => {
+  try {return new Intl.DisplayNames([es ? 'es' : 'en'], {type: 'region'}).of(code) || fallback;} catch {return fallback;}
+};
+
+export default function LocationPicker({es, idPrefix, place, zone, latitude, longitude, country: selectedCountry, geonameId, onChange}: Props) {
+  const [catalog, setCatalog] = useState<CatalogState>('loading');
+  const [countries, setCountries] = useState<CatalogCountry[]>([]);
+  const [country, setCountry] = useState(selectedCountry ?? '');
+  const [query, setQuery] = useState('');
+  const [rows, setRows] = useState<PlaceResult[]>([]);
+  const [state, setState] = useState<SearchState>('idle');
+  const [manual, setManual] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const advanced = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    let live = true;
+    setCatalog('loading');
+    loadManifest().then(list => {if (live) {setCountries(list); setCatalog('ready');}}).catch(() => {if (live) {setCatalog('unavailable'); setManual(true);}});
+    return () => {live = false;};
+  }, [attempt]);
+  useEffect(() => {setCountry(selectedCountry ?? '');}, [selectedCountry]);
+
+  const sorted = useMemo(() => countries.map(c => ({...c, label: regionName(c.code, c.name, es)})).sort((a, b) => a.label.localeCompare(b.label, es ? 'es' : 'en')), [countries, es]);
+  const current = countries.find(c => c.code === country);
+
+  useEffect(() => {
+    setRows([]);
+    if (manual || !current) {setState('idle'); return;}
+    if (Array.from(query.trim()).length < 2) {setState(query.trim() ? 'short' : 'idle'); return;}
+    let live = true;
+    setState('loading');
+    const timer = setTimeout(() => {
+      searchPlaces(current, query, load).then(r => {if (live) {setRows(r.rows); setState(r.status);}}).catch(() => {if (live) setState('error');});
+    }, 200);
+    return () => {live = false; clearTimeout(timer);};
+  }, [current, query, manual]);
+
+  const countryLabel = current ? regionName(current.code, current.name, es) : '';
+  function choose(p: PlaceResult) {
+    const label = [p.name, p.district, p.region, countryLabel].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(', ');
+    onChange({place: label, zone: p.zone, latitude: p.latitude, longitude: p.longitude, country: p.country, geonameId: p.id});
+    setQuery(''); setRows([]); setState('idle');
+  }
+  const set = (patch: Partial<PlaceSelection>) => onChange({place, zone, latitude, longitude, country, geonameId, ...patch});
+  const fromCatalog = !!geonameId && !manual;
+  const id = (s: string) => `${idPrefix}-${s}`;
+
+  return <div className="location-picker">
+    {catalog === 'loading' && <small role="status">{es ? 'Cargando catálogo de lugares…' : 'Loading place catalog…'}</small>}
+    {catalog === 'unavailable' && <div role="alert" className="notice">
+      <p>{es ? 'El catálogo de lugares no está disponible en este momento. Puedes ingresar el lugar, la zona horaria y las coordenadas manualmente.' : 'The place catalog is unavailable right now. You can enter the place, time zone and coordinates manually.'}</p>
+      <button type="button" onClick={() => setAttempt(a => a + 1)}>{es ? 'Reintentar' : 'Retry'}</button>
+    </div>}
+    {catalog === 'ready' && <label htmlFor={id('country')}>{es ? 'País de nacimiento' : 'Birth country'}
+      <select id={id('country')} value={country} onChange={e => {setCountry(e.target.value); setQuery(''); onChange({place: '', zone: '', country: e.target.value});}}>
+        <option value="">{es ? 'Selecciona un país' : 'Select a country'}</option>
+        {sorted.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+      </select></label>}
+    {catalog === 'ready' && !manual && <>
+      <label htmlFor={id('query')}>{es ? 'Ciudad, distrito o pueblo' : 'City, district or village'}
+        <input id={id('query')} value={query} disabled={!country} autoComplete="off" placeholder={country ? (es ? 'Escribe al menos 2 letras' : 'Type at least 2 letters') : (es ? 'Primero elige un país' : 'Choose a country first')} onChange={e => setQuery(e.target.value)} aria-describedby={id('search-status')}/></label>
+      <small id={id('search-status')} role="status">{({
+        idle: '', short: es ? 'Escribe al menos 2 letras.' : 'Type at least 2 letters.', loading: es ? 'Buscando…' : 'Searching…',
+        ready: es ? `${rows.length} coincidencias` : `${rows.length} matches`, more: es ? 'Sigue escribiendo para ver resultados.' : 'Keep typing to see results.',
+        empty: es ? 'No encontramos ese lugar. Revisa la escritura o ingrésalo manualmente.' : 'No place found. Check the spelling or enter it manually.',
+        error: es ? 'No se pudo consultar el catálogo. Inténtalo de nuevo o ingrésalo manualmente.' : 'The catalog could not be reached. Try again or enter it manually.',
+      } as Record<SearchState, string>)[state]}</small>
+      {rows.length > 0 && <ul className="location-results" aria-label={es ? 'Coincidencias' : 'Matches'}>{rows.map(p => <li key={p.id}><button type="button" onClick={() => choose(p)}>
+        <strong>{p.name}</strong><small>{[p.district, p.region, countryLabel].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(' · ')}</small></button></li>)}</ul>}
+    </>}
+    {fromCatalog && place && <p className="place-confirmed" aria-live="polite">✓ {place} <small>({zone})</small></p>}
+    {catalog === 'ready' && <button type="button" className="link" onClick={() => {setManual(v => !v); if (!manual && advanced.current) advanced.current.open = true;}}>
+      {manual ? (es ? 'Buscar en el catálogo' : 'Search the catalog') : (es ? '¿No aparece? Ingresar manualmente' : 'Not listed? Enter manually')}</button>}
+    {manual && <label htmlFor={id('place')}>{es ? 'Lugar de nacimiento' : 'Birthplace'}
+      <input id={id('place')} required maxLength={150} value={place} onChange={e => set({place: e.target.value, geonameId: undefined})}/></label>}
+    <details ref={advanced} open={manual || undefined} className="advanced">
+      <summary>{es ? 'Configuración avanzada (zona horaria y coordenadas)' : 'Advanced settings (time zone and coordinates)'}</summary>
+      <label htmlFor={id('zone')}>{es ? 'Zona horaria de nacimiento' : 'Birth time zone'}
+        <input id={id('zone')} required list="astralis-timezones" value={zone} onChange={e => set({zone: e.target.value, geonameId: undefined})} placeholder="America/Lima"/></label>
+      <div className="profiles">
+        <label htmlFor={id('lat')}>{es ? 'Latitud' : 'Latitude'}<input id={id('lat')} type="number" min="-90" max="90" step="any" value={latitude ?? ''} onChange={e => set({latitude: e.target.value === '' ? undefined : Number(e.target.value), geonameId: undefined})}/></label>
+        <label htmlFor={id('lon')}>{es ? 'Longitud' : 'Longitude'}<input id={id('lon')} type="number" min="-180" max="180" step="any" value={longitude ?? ''} onChange={e => set({longitude: e.target.value === '' ? undefined : Number(e.target.value), geonameId: undefined})}/></label>
+      </div>
+      <small>{es ? 'Sin coordenadas no se calculan Ascendente, Medio Cielo ni casas.' : 'Without coordinates, Ascendant, Midheaven and houses are not calculated.'}</small>
+    </details>
+    <small>{es ? 'Datos geográficos: ' : 'Geographic data: '}<a href="https://www.geonames.org/" target="_blank" rel="noreferrer">GeoNames</a> (CC BY 4.0). {es ? 'Las solicitudes del catálogo pueden quedar en registros del alojamiento.' : 'Catalog requests may be logged by hosting.'}</small>
+  </div>;
 }
