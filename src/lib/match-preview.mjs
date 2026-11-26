@@ -1,4 +1,5 @@
 import {resolveLocalTime} from './birth-time.mjs';
+import {natalAngles,validCoordinates,wholeSignHouse} from './natal-angles.mjs';
 import {calculateUtc} from './ephemeris.mjs';
 import {compatibility} from './compatibility.mjs';
 import {validateBirth} from './birth-input.mjs';
@@ -15,18 +16,22 @@ export function matchPreview(a,b,cutoff){
    for(const instant of resolved.candidates){
     const chart=calculateUtc(new Date(instant));
     if(p.unknownTime)delete chart.longitudes.Moon;
+    if(!p.unknownTime&&validCoordinates(p.latitude,p.longitude)){
+     chart.angles=natalAngles(new Date(instant),p.latitude,p.longitude);
+     if(chart.angles)chart.houses=Object.fromEntries(Object.entries(chart.longitudes).map(([key,lon])=>[key,wholeSignHouse(lon,chart.angles.ascendant)]));
+    }
     charts.push(chart);
    }
   }
   if(!charts.length)return {status:'nonexistent'};
   samples.push(charts);
  }
- const limitations=['No houses, ascendant, nodes or Chiron.','Prototype pending independent ephemeris validation.','Symbolic score, not a scientific probability.'];
+ const limitations=['Local angles and whole-sign houses require known time and coordinates; no Placidus, nodes or Chiron.','Prototype pending independent ephemeris validation.','Symbolic score, not a scientific probability.'];
  if(a.unknownTime||b.unknownTime){
   const results=samples[0].flatMap(x=>samples[1].map(y=>compatibility(x.longitudes,y.longitudes)));
   const range=values=>{const numbers=values.filter(x=>typeof x==='number'&&Number.isFinite(x));return numbers.length?[Math.min(...numbers),Math.max(...numbers)]:null};
   const dimensions=Object.fromEntries(Object.keys(results[0].dimensions).map(k=>[k,range(results.map(x=>x.dimensions[k].score))]));
   return {status:'partial',engineVersion:samples[0][0].version,indexRange:range(results.map(x=>x.index)),dimensions,sampleCount:results.length,limitations:[...limitations,'Unknown time: Moon excluded for affected profile; sampled ranges are estimates, not guaranteed bounds.']};
  }
- return {status:'ok',engineVersion:samples[0][0].version,result:compatibility(samples[0][0].longitudes,samples[1][0].longitudes),limitations};
+ return {status:'ok',engineVersion:samples[0][0].version,result:compatibility(samples[0][0].longitudes,samples[1][0].longitudes),charts:[samples[0][0],samples[1][0]],limitations};
 }
