@@ -1,11 +1,11 @@
 # Next tasks (prioritized)
 
-1. **Push `claude/stabilization` and open PR → `feature/cosmic-match-foundation`**; confirm Foundation CI turns green (blocked: this session had read-only GitHub access).
-2. Run full `scripts/build-geography.py` (world) in CI; record file count, total size and largest shard. If shards > ~1 MB, switch to 3-char prefix shards or drop alias lists from rows (store aliases once per entry).
-3. Add rural Peru regression cases (village-level geonameids) once the full PE catalog output is available.
-4. Fix picker desync on "Try with fictional data" (lift country state or reset picker via `key`).
-5. Upgrade GitHub Actions to Node-24-native versions (deprecation warnings on checkout/setup-node/upload-artifact v4).
-6. Block 4: weighted synastry evidence per dimension as `symbolic-0.2` behind a version flag, with regression tests that keep `symbolic-0.1` reproducible.
-7. Block 5: UX redesign + SVG natal/synastry wheels from computed data; Playwright screenshots.
-8. Block 9: checkout simulation (order → mock confirmation → report → retrieval), no card data.
-9. True node; Chiron only with a licence-compatible ephemeris (Swiss Ephemeris is AGPL/commercial — not usable in a closed SaaS without a licence).
+1. **Owner:** in Cloudflare Pages, confirm build command `npm run build` (or `build:world`), output `out`, no `GEOGRAPHY_COUNTRIES`; redeploy and check the "Geography gate" line in the build log. Then retest Chiclayo + a rural locality on the live URL (agents had no access to the live site).
+2. **ChatGPT:** review/merge #3 → #4 → #5 (retarget to the integration branch after #3) → #6.
+3. **ChatGPT:** approve or adjust symbolic-0.2 internal weights (COMPATIBILITY_METHODOLOGY.md, open questions).
+4. If Cloudflare's build is too slow or memory-bound for the world import (measured 12.5 min on GitHub runners), generate the catalog in GitHub Actions and deploy with `wrangler pages deploy` (needs an owner-created API token secret), or move to the Vercel + Supabase search API.
+5. Mobile search latency: first search 4.9 s on throttled slow-4G + CPU×4 against an **uncompressed** local server. Measure on Cloudflare (brotli); consider a smaller per-country "top places" shard for the first keystrokes.
+6. Block 7: Open Graph/meta, invite links, privacy-respecting analytics; keep `noindex`.
+7. Block 8: Supabase schema review (orders/reports/entitlements), RLS tests against a local Supabase, deletion flow; no paid project.
+8. Payment provider adapter (server-side, signed webhooks) once ChatGPT selects a provider for a Peru-resident founder.
+9. Upgrade GitHub Actions to Node-24-native versions (deprecation warnings).
