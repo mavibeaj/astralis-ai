@@ -100,33 +100,48 @@ def build_files(records, split, buckets):
     return {b: _dump({'p': places, 'k': keys}) for b, (places, _, keys) in grouped.items()}
 
 
-def write_catalog(out, countries, by_country, source):
-    """countries: list[(code, name)]; by_country: code -> list[(place, aliases)]."""
+def new_stats():
+    return {'files': 1, 'bytes': 0, 'gzBytes': 0, 'maxFile': 0, 'maxGz': 0, 'maxGzFile': '', 'places': 0}
+
+
+def write_country(out, code, name, records, stats):
+    """Plan and write one country's shards; returns its manifest entry (or None if empty)."""
     out = pathlib.Path(out)
-    out.mkdir(parents=True, exist_ok=True)
-    manifest, stats = [], {'files': 1, 'bytes': 0, 'gzBytes': 0, 'maxFile': 0, 'maxGz': 0, 'maxGzFile': '', 'places': 0}
-    for code, name in countries:
-        records = by_country.get(code) or []
-        if not records:
-            continue
-        split, buckets, files = plan_country(records)
-        for b, data in files.items():
-            if len(data) > MAX_FILE:
-                raise ValueError(f'{code}/{b}.json exceeds Cloudflare file limit')
-            path = out / code / f'{b}.json'
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(data)
-            gz = len(gzip.compress(data, 6))
-            stats['files'] += 1
-            stats['bytes'] += len(data)
-            stats['gzBytes'] += gz
-            stats['maxFile'] = max(stats['maxFile'], len(data))
-            if gz > stats['maxGz']:
-                stats['maxGz'], stats['maxGzFile'] = gz, f'{code}/{b}.json'
-        stats['places'] += len(records)
-        manifest.append([code, name, buckets, sorted(split)])
+    if not records:
+        return None
+    split, buckets, files = plan_country(records)
+    for b, data in files.items():
+        if len(data) > MAX_FILE:
+            raise ValueError(f'{code}/{b}.json exceeds Cloudflare file limit')
+        path = out / code / f'{b}.json'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        gz = len(gzip.compress(data, 6))
+        stats['files'] += 1
+        stats['bytes'] += len(data)
+        stats['gzBytes'] += gz
+        stats['maxFile'] = max(stats['maxFile'], len(data))
+        if gz > stats['maxGz']:
+            stats['maxGz'], stats['maxGzFile'] = gz, f'{code}/{b}.json'
+    stats['places'] += len(records)
+    return [code, name, buckets, sorted(split)]
+
+
+def write_manifest(out, manifest, stats, source):
     if stats['files'] > MAX_FILES:
         raise ValueError(f"{stats['files']} catalog files exceed the Cloudflare Pages budget ({MAX_FILES})")
     stats['countries'] = len(manifest)
-    (out / 'countries.json').write_bytes(_dump({'v': 2, 'source': source, 'places': stats['places'], 'countries': manifest}))
+    manifest = sorted(manifest, key=lambda m: m[0])
+    (pathlib.Path(out) / 'countries.json').write_bytes(_dump({'v': 2, 'source': source, 'places': stats['places'], 'countries': manifest}))
     return stats
+
+
+def write_catalog(out, countries, by_country, source):
+    """countries: list[(code, name)]; by_country: code -> list[(place, aliases)]."""
+    pathlib.Path(out).mkdir(parents=True, exist_ok=True)
+    stats, manifest = new_stats(), []
+    for code, name in countries:
+        entry = write_country(out, code, name, by_country.get(code) or [], stats)
+        if entry:
+            manifest.append(entry)
+    return write_manifest(out, manifest, stats, source)

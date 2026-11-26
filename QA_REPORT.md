@@ -1,41 +1,108 @@
-# QA report — branch `claude/stabilization` (base `feature/cosmic-match-foundation` @ abcd934)
+# QA report: P0 geography + Blocks 4, 5 and 9 (2026-11-26)
 
-Environment: Node 22.23.5, npm 10.9.9, Next.js 16.4.6, Chrome for Testing 153, Playwright 1.56.1. Date: 2026-11-26.
+Earlier results (Blocks 1–3: ephemeris validation, CI root cause) are in git history (`7730b46`).
 
-| Check | Command | Result |
-|---|---|---|
-| Install | `npm install` → `package-lock.json` committed | OK, 0 vulnerabilities (`npm audit`) |
-| Typecheck | `npm run typecheck` | OK |
-| Unit tests | `npm test` | **140/140 pass** (60 before this branch) |
-| Build | `npm run build` (static export) | OK, `out/index.html` present |
-| Browser E2E | `CHROMIUM_PATH=… node tests/browser-smoke.mjs` | OK desktop 1280×900 and mobile 390×844, no page errors, no horizontal overflow |
-| Secret scan | `git grep` + full `git log -p` for key/JWT/service-role patterns | No findings |
+## P0: empty country and city selectors
 
-## CI root cause (Foundation CI red since run #107, commit 25d83f8)
-The time-zone field is `<input list>` → ARIA role `combobox`. `browser-smoke.mjs` used `getByRole('combobox')` (2 matches → Playwright strict-mode error) and read the zone as a `textbox`. Only the `build` job failed (no screenshots uploaded). Fixed in 1140979 by selecting by label. Reproduced and verified locally; **not yet verified on GitHub Actions** (this session cannot push).
+**Diagnosis, reproduced on the static production artifact:**
+- `npm run build` (plain `next build`) produced no `out/geography/`.
+- `GET /geography/countries.json` returned **404 text/html**.
+- The country list showed only the placeholder and the city input stayed disabled. There was no error message, because `location-picker.tsx` discarded the failure (`.catch(()=>{})`).
 
-## Astronomical validation (tests/ephemeris-reference.test.mjs, tests/houses.test.mjs)
-Reference: Swiss Ephemeris 2.10.03 (Moshier, independent of Astronomy Engine) and Python `zoneinfo` (tzdb 2026) for local→UTC. 12 fictional cases, 10 locations on 5 continents, 1944–2024, incl. Peru DST (1987), UK double summer time (1944), US DST change day.
+**Not verified:**
+- The live site: the agent's fetch of the live site needed an approval that was not answered.
+- The Cloudflare build settings: the agent has no access.
 
-| Quantity | Max deviation observed | Test tolerance |
-|---|---|---|
-| Sun | 1.0″ | 5″ |
-| Moon | 2.1″ | 10″ |
-| Mercury–Pluto | 17.5″ (Neptune) | 30″ |
-| Ascendant / MC | 0.1″ | 5″ |
-| Placidus cusps | 0.1″ | 5″ |
-| Mean lunar node | 17.8″ | 30″ |
-| Local → UTC | exact, 12/12 | exact |
+ChatGPT's hypothesis (Cloudflare runs `npm run build` rather than `build:world`) matches the artifact behaviour but is not confirmed. The fix works with either command.
 
-Frame: geocentric, tropical, true ecliptic and equinox of date, apparent positions. Topocentric correction is **not** applied (Moon parallax up to ~1° — astrology convention is geocentric; document if topocentric is ever offered).
+**Fix verification:**
 
-Pre-1970 time zones: Intl/ICU vs zoneinfo agreed on 27 canonical zones × 280 samples (1900–1969), but 318/4000 random samples disagreed, concentrated in tzdb *link* zones (e.g. Atlantic/Reykjavik, Africa/Kinshasa). Hence pre-1970 results carry `tzdbConfidence: 'historical-unverified'` and a UI warning.
+| Check | Result |
+|---|---|
+| `npm run build` without GeoNames access | exit 1 (download error); nothing published |
+| Gate on missing catalog / fixture catalog | exit 1, with an explicit message |
+| Foundation CI, real GeoNames subset (PE, JP, KE, IS, AU, BR, ES, US, GB) | ✓ build + 25 catalog tests + browser journey |
+| Catalog unavailable (404 simulated in browser) | alert, retry button, manual entry; no JS errors |
+| Demo data after a Peru selection | picker resyncs (GB), no stale country |
 
-## Geography (tests/geography-catalog.test.mjs)
-GeoNames download is blocked in this sandbox; validated with an offline fixture built from GeoNames-derived PyPI snapshots (geonamescache 3.0.2 cities500 + reverse_geocoder 1.5.1): 30 countries, 16/16 checks pass — Lima, Chiclayo, Arequipa, Cusco (also via "Cuzco"/"Qusqu"), Trujillo, Ferreñafe; Tokyo, Nairobi, Reykjavík, Alice Springs, São Paulo, Anchorage, Cádiz; all IANA zones valid; Cloudflare limits (≤20 000 files, ≤25 MiB/file).
-**Not validated here:** small rural Peruvian localities (fixture only has population ≥ 500) and the full world build. CI now runs the catalog test after the live PE import.
+## World import (GitHub Actions, ubuntu-24.04, run 45869784470, real GeoNames)
 
-Size observation (fixture, extrapolation): US 21 783 places → largest shard 520 KB. Full GeoNames US has roughly an order of magnitude more P/A features, so a single search shard could reach several MB — a mobile UX risk, below the 24 MiB guard. See NEXT_TASKS.
+| Metric | Value |
+|---|---|
+| Countries/territories | 248 |
+| Places (P + ADM1–5) | 5,662,435 |
+| Shards / files in `out/` | 5,995 / 6,018 (Cloudflare Pages limit: 20,000) |
+| Size raw / gzip | 1.15 GB / 289 MB |
+| Largest shard | 982 KB raw · 204 KB gzip (VN/13) |
+| Wall time (full `npm run build`) | 12 min 29 s |
+| Peak RSS | 6.1 GB before streaming → 2.2 GB after (run 45871881340, wall 11 min 50 s, identical output) |
+| Catalog tests | 25/25 pass, 0 skipped |
 
-## Known UX defect (not fixed)
-After choosing a catalog place, "Try with fictional data" replaces the place/zone but the country `<select>` keeps the old country (picker state is internal).
+The catalog tests cover:
+- Peru: Lima, Chiclayo, Arequipa, Cuzco/Cusco/Qusqu, Trujillo, Ferreñafe.
+- Rural Lambayeque: Pimentel, Monsefú, Reque, Eten, Incahuasi, Cañaris (region, IANA zone, bounding box).
+- Duplicate names: "San José" in ≥3 Peruvian regions.
+- Non-Latin search: 東京.
+- One city per continent: Tokyo, Nairobi, Reykjavík, Alice Springs, São Paulo, Anchorage, Cádiz.
+- Every IANA zone is valid; Cloudflare file limits.
+
+**Mobile search** (Playwright, 390 px, 1.6 Mbps / 150 ms, CPU ×4). The local server does **not** compress, so these are pessimistic: Cloudflare serves brotli.
+
+| Query | Chiclayo (first query) | Monsefú | San José | Springfield (US) | São Paulo | 東京 | Delhi |
+|---|---|---|---|---|---|---|---|
+| Time | 4.9 s | 1.9 s | 2.9 s | 2.4 s | 1.3 s | 1.9 s | 2.3 s |
+
+## Block 4: symbolic-0.2 candidate
+- Symmetry on 300 random pairs, including unknown times.
+- Determinism.
+- No double counting.
+- The evidence sum equals the dimension sum.
+- Bounds.
+- Nodes produce only conjunctions/oppositions.
+- Golden values: 0.1 = 49 (unchanged), 0.2 = 54.
+
+## Block 5: UX and wheels
+- Wheel geometry tests (8):
+  - ASC orientation.
+  - Order-preserving spreading, including across 0° Aries.
+  - Houses.
+  - Unknown time.
+  - Synastry cross aspects.
+- Playwright journey, desktop 1280 and mobile 390:
+  - Landing page.
+  - Step validation.
+  - Chiclayo → America/Lima with coordinates; Tokyo → Asia/Tokyo.
+  - Bi-wheel with ≥20 bodies, 12 houses and aspects; tooltip; exact-degree table.
+  - Premium demo; PNG card.
+  - Unknown-time partial reading (no houses).
+  - No JS errors, no horizontal overflow.
+- Defects found and fixed during QA:
+  - House-cusp lines and glyphs captured the pointer over planets.
+  - The pairwise glyph-spreading algorithm broke planet order; replaced with cluster layout.
+
+## Block 9: checkout simulation
+- 14 unit tests:
+  - Happy path to fulfilled, then recovery.
+  - Idempotent orders.
+  - Exactly-once events; tampered events rejected.
+  - Decline and retry; network error keeps the order pending.
+  - Card-like fields rejected.
+  - Payment required before a report.
+  - Report input cannot be swapped after purchase.
+  - Persistence round-trip.
+  - No personal data in the report HTML.
+  - Cost under USD 0.10.
+- Playwright: decline → retry → approve → report → HTML download → recovery from the landing page.
+
+## Totals on the top of the stack (`claude/checkout-sim`)
+- typecheck ✓
+- `npm test`: 187 tests, 180 pass, 0 fail, 7 skipped. The skips need the full GeoNames catalog; they pass in CI.
+- Static build ✓
+- Playwright ✓
+
+## Known limitations
+- The live Cloudflare deployment is unverified.
+- The mobile first search is slow on throttled networks.
+- The wheel's glyphs are small on 390 px screens (legible, with tooltips).
+- The premium report text is the deterministic generator (no generative AI).
+- Recovery works on the same browser only (localStorage) until Supabase.

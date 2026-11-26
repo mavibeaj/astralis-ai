@@ -1,21 +1,24 @@
-# Project status (2026-11-26, branch `claude/stabilization`)
+# Project status (2026-11-26)
+
+Integration branch: `feature/cosmic-match-foundation` @ 85e9d3e (PR #2 merged). Open Claude PRs, in merge order:
+
+| PR | Branch | Base | Scope | CI |
+|---|---|---|---|---|
+| #3 | `claude/geo-p0-fix` | feature/cosmic-match-foundation | **P0** geography catalog in deploy build, adaptive shards, picker states | Foundation ✓ · World import ✓ |
+| #4 | `claude/synastry-0.2` | feature/cosmic-match-foundation | Block 4 symbolic-0.2 candidate (flag) | ✓ |
+| #5 | `claude/product-experience` | claude/geo-p0-fix (+ merges #4) | Block 5 redesign + SVG wheels | ✓ |
+| #6 | `claude/checkout-sim` | claude/product-experience | Block 9 checkout simulation | see PR |
 
 | Module | Status | Evidence |
 |---|---|---|
-| Build / CI | Green locally; CI fix pending push | QA_REPORT.md |
-| Lockfile | Committed (npm) | 69ebda2 |
-| Geography (GeoNames) | Picker + live build script existed; catalog validation test added; full world build not run here | 0dd99ac |
-| Local time → UTC | 1900+; pre-1970 flagged; validated vs zoneinfo | f4bef7b |
-| Planets Sun–Pluto | Validated ≤17.5″ vs Swiss Ephemeris | d52d821 |
-| ASC/DSC/MC/IC, whole-sign | Validated ≤0.1″ | d52d821 |
-| Placidus | Implemented, ≤0.1″, omitted >66° lat | 23ca543 |
-| Lunar nodes | Mean node ≤18″; true node not implemented | 23ca543 |
-| Chiron | Not implemented (needs licensed ephemeris data) | — |
-| Topocentric | Not implemented (geocentric only, documented) | — |
-| Synastry | Cross aspects + bidirectional whole-sign overlays (pre-existing) | src/lib/synastry.mjs |
-| Score | `symbolic-0.1` unchanged | tests/compatibility.test.mjs |
-| UX redesign, SVG wheels | Not started | — |
-| Premium demo | Deterministic preview + mock AI adapter (pre-existing) | — |
-| Sharing cards | 9:16 and 4:5 PNG (pre-existing) | — |
+| Geography (GeoNames) | World catalog: 248 countries, 5.66 M places, 5,995 shards, max 204 KB gzip; deploy build fails without real data | PR #3, QA_REPORT |
+| Live Cloudflare site | **Not verified** (no access). Owner must confirm build command `npm run build`, output `out` | DEPLOYMENT.md |
+| Local time → UTC | 1900+, pre-1970 flagged | validated vs zoneinfo |
+| Planets, ASC/MC, Placidus, mean node | Validated vs Swiss Ephemeris (≤17.5″ planets, ≤0.1″ angles/cusps) | tests/ephemeris-reference, houses |
+| Chiron, true node, topocentric | Not implemented | TD-05 |
+| Score | `symbolic-0.1` default (golden 49); `symbolic-0.2-candidate` behind `?scoring=0.2` (golden 54), awaiting CTO weights review | PR #4 |
+| UX | Landing, 4-step form, calculation animation, results, three SVG wheels | PR #5 |
+| Premium | Deterministic preview + checkout **simulation** (orders, reports, recovery) | PR #6 |
+| Payments | Disabled. No provider selected | MONETIZATION.md |
 | Supabase / RLS | Draft SQL only, not executed | database/schema-draft.sql |
-| Payments | Disabled; no simulation yet | — |
+| Virality (Block 7), Supabase (Block 8) | Not started (only pre-existing share cards) | — |
