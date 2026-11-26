@@ -5,7 +5,7 @@ const server=spawn('python3',['-m','http.server','4173','--bind','127.0.0.1','--
 let browser;
 try{
  for(let i=0;i<50;i++){try{if((await fetch('http://127.0.0.1:4173')).ok)break}catch{}await new Promise(r=>setTimeout(r,200));}
- browser=await chromium.launch();
+ browser=await chromium.launch(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{});
  for(const viewport of [{width:1280,height:900},{width:390,height:844}]){
   const page=await browser.newPage({viewport,acceptDownloads:true});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -14,10 +14,10 @@ try{
   await page.getByRole('button',{name:'Pareja',exact:true}).click();
   const first=page.locator('.location-picker').first();
   await first.getByRole('option',{name:'Perú',exact:true}).waitFor({state:'attached'});
-  await first.getByRole('combobox').selectOption('PE');
+  await first.getByLabel('País de nacimiento').selectOption('PE');
   await first.getByPlaceholder('Escribe al menos 2 letras').fill('Chiclayo');
   await first.getByRole('button',{name:/Chiclayo.*Lambayeque/i}).first().click();
-  assert.equal(await first.getByRole('textbox',{name:'Zona horaria de nacimiento'}).inputValue(),'America/Lima');
+  assert.equal(await first.getByRole('combobox',{name:'Zona horaria de nacimiento'}).inputValue(),'America/Lima');
   await page.getByRole('button',{name:'Probar con datos ficticios'}).click();
   await page.getByRole('button',{name:'Descubrir nuestra conexión'}).click();
   await page.getByRole('heading',{name:'Índice simbólico experimental'}).waitFor();
