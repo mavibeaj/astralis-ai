@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
+      - name: Generate Peru geography fixture from GeoNames
+        if: matrix.check == 'build'
+        run: GEOGRAPHY_COUNTRIES=PE python3 scripts/build-geography.py
       - name: Runtime diagnostics
         run: node --version && npm --version
       - name: Run check and retain diagnostics
