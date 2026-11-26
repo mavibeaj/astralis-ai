@@ -9,7 +9,7 @@ Writes metrics to geography-stats.json.
 """
 import csv, io, json, os, pathlib, resource, sys, time, urllib.request, zipfile, concurrent.futures
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from geography_catalog import norm, write_catalog
+from geography_catalog import norm, new_stats, write_country, write_manifest
 
 BASE = 'https://download.geonames.org/export/dump/'
 OUT = pathlib.Path('public/geography')
@@ -64,15 +64,27 @@ def main():
                 records.append((place, {a for a in aliases if a}))
         return code, records
 
-    by_country = {}
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
-        for code, records in pool.map(load, countries):
-            by_country[code] = records
-            print(code, len(records), flush=True)
+    # Stream: each country is written as soon as it is loaded, so memory stays near the
+    # largest single country instead of the whole world (measured 6.1 GB before this change).
     if OUT.exists():
         import shutil
         shutil.rmtree(OUT)
-    stats = write_catalog(OUT, countries, by_country, 'geonames' + (':' + subset if subset else ':world'))
+    OUT.mkdir(parents=True)
+    names = dict(countries)
+    stats, manifest = new_stats(), []
+    import collections
+    queue, pending = collections.deque(countries), collections.deque()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+        while queue or pending:
+            while queue and len(pending) < 3:  # bounded window: at most 3 countries in memory
+                pending.append(pool.submit(load, queue.popleft()))
+            code, records = pending.popleft().result()
+            entry = write_country(OUT, code, names[code], records, stats)
+            if entry:
+                manifest.append(entry)
+            print(code, len(records), flush=True)
+            del records
+    stats = write_manifest(OUT, manifest, stats, 'geonames' + (':' + subset if subset else ':world'))
     stats['seconds'] = round(time.time() - started, 1)
     stats['peakRssMB'] = round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 1)
     stats['subset'] = subset or None
