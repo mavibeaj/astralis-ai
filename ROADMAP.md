@@ -4,4 +4,4 @@
 - P1: Identity and Couple, composite charts, PDF, gifting, referral tracking and SEO expansion.
 - P2: Plus subscriptions, personalized transits, weekly email, assistant and more languages.
 
-Current status: foundation only. No runtime, payment, deployment or astronomical accuracy verification claimed.
+Current status: see PROJECT_STATUS.md. Engine validated against Swiss Ephemeris in 12 reference cases; no payment or deployment.
