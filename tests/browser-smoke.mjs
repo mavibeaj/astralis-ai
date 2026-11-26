@@ -11,6 +11,13 @@ try{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:4173');
   await page.getByRole('button',{name:'ES',exact:true}).click();
+  await page.getByRole('button',{name:'Pareja',exact:true}).click();
+  const first=page.locator('.location-picker').first();
+  await first.getByRole('option',{name:'Perú',exact:true}).waitFor({state:'attached'});
+  await first.getByRole('combobox').selectOption('PE');
+  await first.getByPlaceholder('Escribe al menos 2 letras').fill('Chiclayo');
+  await first.getByRole('button',{name:/Chiclayo.*Lambayeque/i}).first().click();
+  assert.equal(await first.getByRole('textbox',{name:'Zona horaria de nacimiento'}).inputValue(),'America/Lima');
   await page.getByRole('button',{name:'Probar con datos ficticios'}).click();
   await page.getByRole('button',{name:'Descubrir nuestra conexión'}).click();
   await page.getByRole('heading',{name:'Índice simbólico experimental'}).waitFor();
