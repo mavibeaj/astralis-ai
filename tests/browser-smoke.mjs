@@ -17,8 +17,15 @@ try{
   await first.getByLabel('País de nacimiento').selectOption('PE');
   await first.getByPlaceholder('Escribe al menos 2 letras').fill('Chiclayo');
   await first.getByRole('button',{name:/Chiclayo.*Lambayeque/i}).first().click();
-  assert.equal(await first.getByRole('combobox',{name:'Zona horaria de nacimiento'}).inputValue(),'America/Lima');
+  assert.equal(await page.locator('#a-zone').inputValue(),'America/Lima');
+  {const lat=Number(await page.locator('#a-lat').inputValue());assert.ok(lat>-6.9&&lat<-6.6,'Chiclayo latitude '+lat)}
+  await first.getByText(/✓ Chiclayo/).waitFor();
+  // Non-existent place: explicit empty state, manual path offered.
+  await first.getByPlaceholder('Escribe al menos 2 letras').fill('Zzqxw');
+  await first.getByText('No encontramos ese lugar',{exact:false}).waitFor();
   await page.getByRole('button',{name:'Probar con datos ficticios'}).click();
+  // Picker resynchronises with the fictional profile (GB) instead of keeping Peru.
+  assert.equal(await first.getByLabel('País de nacimiento').inputValue(),'GB');
   await page.getByRole('button',{name:'Descubrir nuestra conexión'}).click();
   await page.getByRole('heading',{name:'Índice simbólico experimental'}).waitFor();
   await page.getByRole('button',{name:'Ver demostración gratuita'}).click();
@@ -32,4 +39,18 @@ try{
   await page.screenshot({path:'browser-'+viewport.width+'.png',fullPage:true});
   await page.close();
  }
+ // Catalog unavailable: the page must say so and fall back to manual entry, never show empty selectors silently.
+ const page=await browser.newPage({viewport:{width:390,height:844}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.route('**/geography/**',r=>r.fulfill({status:404,contentType:'text/html',body:'<!doctype html><p>404</p>'}));
+ await page.goto('http://127.0.0.1:4173');
+ await page.getByRole('button',{name:'ES',exact:true}).click();
+ await page.getByRole('button',{name:'Pareja',exact:true}).click();
+ const picker=page.locator('.location-picker').first();
+ await picker.getByRole('alert').getByText('no está disponible',{exact:false}).waitFor();
+ await picker.getByLabel('Lugar de nacimiento').fill('Chiclayo, Lambayeque, Perú');
+ await picker.getByLabel('Zona horaria de nacimiento').fill('America/Lima');
+ assert.deepEqual(errors,[]);
+ await page.screenshot({path:'browser-catalog-unavailable.png',fullPage:true});
+ await page.close();
 }finally{await browser?.close();server.kill();}

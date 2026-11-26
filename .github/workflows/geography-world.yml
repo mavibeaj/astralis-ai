@@ -1,0 +1,56 @@
+name: Geography world import
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - scripts/build-geography.py
+      - scripts/geography_catalog.py
+      - scripts/verify-geography-artifact.mjs
+      - src/lib/geo-search.mjs
+      - .github/workflows/geography-world.yml
+permissions:
+  contents: read
+jobs:
+  world:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: command -v /usr/bin/time || (sudo apt-get update -q && sudo apt-get install -y -q time)
+      - name: Full deployment build (world GeoNames import + gate)
+        run: /usr/bin/time -v npm run build 2> time.txt; status=$?; tail -n 25 time.txt; exit $status
+      - name: Validate catalog (incl. rural Peru)
+        run: node --test tests/geography-catalog.test.mjs
+      - name: Browser journey + mobile search performance
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+          node tests/browser-smoke.mjs
+          node tests/geo-perf.mjs | tee geo-perf.json
+      - name: Metrics summary
+        if: always()
+        run: |
+          {
+            echo '## GeoNames world catalog'
+            echo '```json'; cat geography-stats.json 2>/dev/null; echo '```'
+            echo "Files in out/: $(find out -type f | wc -l) · out/geography size: $(du -sh out/geography | cut -f1)"
+            echo "Largest raw shard: $(find out/geography -type f -printf '%s %p\n' | sort -n | tail -1)"
+            grep -E 'Elapsed|Maximum resident' time.txt || true
+            echo '```json'; cat geo-perf.json 2>/dev/null; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: geography-world-metrics
+          path: |
+            geography-stats.json
+            geo-perf.json
+            time.txt
+            browser-*.png
+          retention-days: 14
