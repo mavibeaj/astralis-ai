@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {narrativeRequest,validateNarrative} from '../src/lib/premium-narrative.mjs';
+const keys=['emotional','communication','attraction','stability','growth'];
+const fixture=()=>({status:'ok',result:{index:60,dimensions:Object.fromEntries(keys.map((k,i)=>[k,{score:80-10*i,coverage:1}]))}});
+const response=()=>({summary:'Explore these symbolic themes together.',themes:keys.map(key=>({key,reflection:'A symbolic topic for discussion.',activity:'Discuss one shared expectation.'}))});
+test('narrative requests exclude identifying fields and set output budget',()=>{const f=fixture();f.name='private-name';f.result.birthDate='1990-01-01';const request=narrativeRequest(f,'es','partner');assert.equal(request.maxOutputTokens,1800);assert.equal(request.input.locale,'es');assert.ok(!JSON.stringify(request).includes('private-name'));assert.ok(!JSON.stringify(request).includes('1990-01-01'));});
+test('narrative preserves deterministic index and canonical dimension order',()=>{const v=response();v.themes.reverse();const out=validateNarrative(JSON.stringify(v),fixture(),'en','friendship');assert.equal(out.index,60);assert.deepEqual(out.themes.map(t=>t.key),keys);assert.deepEqual(out.themes.map(t=>t.score),[80,70,60,50,40]);});
+test('reject duplicate, missing and unrecognized themes',()=>{for(const change of [v=>v.themes.pop(),v=>v.themes[1].key=v.themes[0].key,v=>v.themes[0].key='unknown']){const v=response();change(v);assert.throws(()=>validateNarrative(JSON.stringify(v),fixture(),'en','partner'));}});
+test('reject attempts to overwrite scores or add unauthorized output fields',()=>{const v=response();v.themes[0].score=100;assert.throws(()=>validateNarrative(JSON.stringify(v),fixture(),'en','partner'));const w=response();w.index=100;assert.throws(()=>validateNarrative(JSON.stringify(w),fixture(),'en','partner'));});
+test('reject malformed, empty, oversized and markup responses',()=>{for(const raw of ['not json','{}',' '.repeat(16001)])assert.throws(()=>validateNarrative(raw,fixture(),'en','crush'));for(const summary of ['', 'x'.repeat(901),'<script>']){const v=response();v.summary=summary;assert.throws(()=>validateNarrative(JSON.stringify(v),fixture(),'en','crush'));}});
+test('reject partial readings before building AI requests',()=>{assert.throws(()=>narrativeRequest({status:'partial'},'en','partner'));});
