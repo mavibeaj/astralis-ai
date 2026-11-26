@@ -39,7 +39,8 @@ export function matchPreview(a,b,cutoff,options={}){
   const range=values=>{const numbers=values.filter(x=>typeof x==='number'&&Number.isFinite(x));return numbers.length?[Math.min(...numbers),Math.max(...numbers)]:null};
   const dimensions=Object.fromEntries(Object.keys(results[0].dimensions).map(k=>[k,range(results.map(x=>x.dimensions[k].score))]));
   const candidate=options.candidate?compatibilityV02({chart:samples[0][Math.floor(samples[0].length/2)],unknownTime:a.unknownTime},{chart:samples[1][Math.floor(samples[1].length/2)],unknownTime:b.unknownTime}):undefined;
-  return {status:'partial',candidate,engineVersion:samples[0][0].version,indexRange:range(results.map(x=>x.index)),dimensions,sampleCount:results.length,limitations:[...limitations,'Unknown time: Moon excluded for affected profile; sampled ranges are estimates, not guaranteed bounds.']};
+  const mid=list=>list[Math.floor(list.length/2)];
+  return {status:'partial',candidate,charts:[mid(samples[0]),mid(samples[1])],engineVersion:samples[0][0].version,indexRange:range(results.map(x=>x.index)),dimensions,sampleCount:results.length,limitations:[...limitations,'Unknown time: Moon excluded for affected profile; sampled ranges are estimates, not guaranteed bounds.']};
  }
  const candidate=options.candidate?compatibilityV02({chart:samples[0][0]},{chart:samples[1][0]}):undefined;
  return {status:'ok',candidate,engineVersion:samples[0][0].version,result:compatibility(samples[0][0].longitudes,samples[1][0].longitudes),charts:[samples[0][0],samples[1][0]],limitations};
