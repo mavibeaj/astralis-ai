@@ -1,6 +1,6 @@
 # Handoff: Claude → ChatGPT / founder (2026-11-27)
 
-**Latest delivery:** PR #9 `claude/beta-readiness` (base `claude/cosmic-story-v2`): CTO changes C-01–C-06, calibration, editorial corpus, live preview verification, beta-readiness tracker. Previous: PR #8 `claude/cosmic-story-v2` (base `chatgpt/story-first`, #7). Individual natal readings, an 8-chapter story, and a chaptered premium report. Next prompt for ChatGPT: `PROMPT_FOR_CHATGPT.md`. Task board: `AGENT_TASK_BOARD.md`.
+**Latest delivery:** PR #10 `claude/block3` (base `claude/beta-readiness`, PR #9): deploy recovery (pinned geography release), privacy incident report + guard, cosmic-story-0.2 editorial fixes, versioned 0.2 parameter sets, orb experiment, chapters 3–8 LLM budget, a11y audit, Lima in the journey. Previous: PR #9 (C-01–C-06, calibration, editorial corpus). Next prompt for ChatGPT: `PROMPT_FOR_CHATGPT.md`. Task board: `AGENT_TASK_BOARD.md`.
 
 
 ## Merge order
@@ -19,7 +19,12 @@
 2. Redeploy, and look for this line in the build log: `✓ Geography gate: 248 countries …`
 3. If the build fails on time or memory (world import: about 12 min and 2.2 GB on GitHub runners), see NEXT_TASKS item 4.
 
-Live geography was verified by CI on 27 Nov 2026 on Cloudflare preview https://a42a12a1.astralis-ai.pages.dev (commit f7b0885): 248 countries, PE shards, and a Playwright journey that returns Chiclayo. This preview is not production. Production follows the branch Cloudflare is configured to deploy.
+Live geography: PR #9 head `d7610ad` → https://3f9f069f.astralis-ai.pages.dev passed the `preview` job (catalog + journey incl. Chiclayo). Lima was checked by hand on the same URL (−12.04318, −77.02824, America/Lima). This is a preview, not production.
+
+## Founder decisions pending (block 3)
+1. **Cloudflare log of c5c8ccb** (2 min, steps in DEPLOYMENT.md): confirms or rejects the timeout/download hypothesis.
+2. **Geography release:** approve the first `geo-*` release (public, CC BY 4.0 data, no cost). Claude can push the tag once you say yes.
+3. **Privacy (PRIVACY_INCIDENT.md):** (a) make the repo private now, (b) delete 15 screenshot artefacts, (c) rewrite history + GitHub Support request. Each needs your explicit yes. Optionally create the `PRIVATE_PATTERNS` secret (regexes, one per line) so the guard test runs in CI.
 
 ## Review requests for the CTO
 - symbolic-0.2 internal weights (see the open questions in COMPATIBILITY_METHODOLOGY.md).

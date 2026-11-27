@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {matchPreview} from '../src/lib/match-preview.mjs';
 import {storyFromResult} from '../src/lib/natal-interpretation/index.mjs';
 import {buildStoryRequest, validateStoryResponse} from '../src/lib/natal-interpretation/llm-adapter.mjs';
-import {mockModel, checkGrounding, estimateCost} from '../src/lib/natal-interpretation/llm-mock.mjs';
+import {mockModel, checkGrounding, estimateCost, planJointRewrite, PRICE_TIERS, BUDGET} from '../src/lib/natal-interpretation/llm-mock.mjs';
 
 const A = {date: '1990-03-06', time: '07:45', unknownTime: false, place: 'Chiclayo', zone: 'America/Lima', latitude: -6.77008, longitude: -79.84088};
 const B = {date: '1995-09-22', time: '15:30', unknownTime: false, place: 'Tokyo', zone: 'Asia/Tokyo', latitude: 35.6895, longitude: 139.69171};
@@ -37,16 +37,16 @@ test('certainty and predictions are rejected even with valid citations', () => {
   assert.throws(() => validateStoryResponse(one('Esta pareja va a durar.', ['A:placement:Sun']), req), /prediction/);
   assert.deepEqual(checkGrounding('A podría valorar la calma.', ['A:placement:Sun'], req), []);
 });
-// Open finding (T-21 / CTO decision on LLM scope): the full premium rewrite sits at ~USD 0.10 and exceeds it
-// for some pairs (0.098 → 0.102 when the fixture changed). Kept as a todo so the gap stays visible, not hidden.
-test('cost model stays within the USD 0.10 target with placeholder prices', {todo: 'full premium rewrite ≈ USD 0.10, exceeds target for some pairs; pending LLM-scope decision'}, () => {
+// CTO block 3: rewrite only chapters 3–8; target USD 0.05, cap 0.10 per report, retries included; fallback to deterministic.
+test('joint-chapter budget: cap enforced with retries; deterministic fallback when over cap or too long', () => {
   const premium = storyFromResult(matchPreview(A, B, '2026-11-27'), {lang: 'es', names: ['Ana', 'Leo'], premium: true});
-  // Realistic worst case: the model rewrites every narrative sentence of the premium reading,
-  // wrapped in the citation JSON (~25% overhead).
-  const C = premium.couple;
-  const prose = [...premium.people.flatMap(p => [...p.sections.map(x => x.text), ...p.details.map(d => d.text)]), ...C.story.map(x => x.text), ...[...C.affinities, ...C.tensions].flatMap(c => [c.story, c.daily, c.benefit, c.tip, c.care, c.misunderstanding, c.needX, c.needY, c.action].filter(Boolean)), ...C.daily.map(d => d.text), ...C.overlays.map(o => o.text), C.closing].join(' ');
-  const c = estimateCost(req, prose + ' '.repeat(Math.round(prose.length * 0.25)));
-  assert.ok(c.placeholder);
-  console.log(`premium rewrite estimate: ${c.inputTokens} in / ${c.outputTokens} out tokens ≈ USD ${c.usd} (placeholder prices)`);
-  assert.ok(c.usd < 0.10, `estimated ${c.usd}`);
+  const large = planJointRewrite(req, premium, {pricing: PRICE_TIERS['tier-large (hypothetical)']});
+  const medium = planJointRewrite(req, premium, {pricing: PRICE_TIERS['tier-medium (hypothetical)']});
+  console.log('chapters 3–8 plan (hypothetical tiers):', JSON.stringify({large: [large.expectedUsd, large.worstUsd, large.mode], medium: [medium.expectedUsd, medium.worstUsd, medium.mode]}));
+  assert.ok(large.worstUsd >= large.expectedUsd && large.expectedUsd >= large.attemptUsd);
+  assert.equal(large.mode, large.worstUsd <= BUDGET.capUsd ? 'llm' : 'deterministic');
+  assert.equal(medium.mode, 'llm'); assert.ok(medium.worstUsd <= BUDGET.capUsd && medium.withinTarget);
+  assert.ok(planJointRewrite(req, premium, {pricing: PRICE_TIERS['tier-medium (hypothetical)'], retries: 3}).worstUsd > medium.worstUsd);
+  const short = planJointRewrite(req, premium, {pricing: PRICE_TIERS['tier-small (hypothetical)'], maxOutputTokens: 500});
+  assert.equal(short.mode, 'deterministic'); assert.match(short.reason, /maxOutputTokens/);
 });

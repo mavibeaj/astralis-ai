@@ -12,7 +12,7 @@ const TOKYO = {place: 'Tokyo', zone: 'Asia/Tokyo', latitude: 35.6895, longitude:
 const A = {date: '1990-03-06', time: '07:45', unknownTime: false, ...CHICLAYO};
 const B = {date: '1995-09-22', time: '15:30', unknownTime: false, ...TOKYO};
 const run = (a, b, o = {}) => storyFromResult(matchPreview(a, b, '2026-11-27'), {lang: 'es', names: ['Ana', 'Leo'], relationship: 'partner', unknownTime: [a.unknownTime, b.unknownTime], ...o});
-const allText = s => [...s.people.flatMap(p => [...p.sections.map(x => x.text), ...p.details.map(d => d.text)]), ...s.couple.story.map(x => x.text), ...[...s.couple.affinities, ...s.couple.tensions].flatMap(c => [c.title, c.story, c.daily, c.benefit, c.tip, c.misunderstanding, c.needX, c.needY, c.action].filter(Boolean)), ...s.couple.daily.map(d => d.text), ...(s.couple.overlays ?? []).map(o => o.text), ...Object.values(s.couple.advice).flat(), s.couple.closing, s.couple.title].join('\n');
+const allText = s => [...s.people.flatMap(p => [...p.sections.map(x => x.text), ...p.details.map(d => d.text)]), ...s.couple.story.map(x => x.text), ...[...s.couple.affinities, ...(s.couple.intense ?? []), ...s.couple.tensions].flatMap(c => [c.title, c.story, c.daily, c.benefit, c.tip, c.care, c.misunderstanding, c.needX, c.needY, c.action].filter(Boolean)), ...s.couple.daily.map(d => d.text), ...(s.couple.overlays ?? []).map(o => o.text), ...Object.values(s.couple.advice).flat(), s.couple.closing, s.couple.title].join('\n');
 const chartAt = (utc, lat, lon) => {const t = new Date(utc); return {longitudes: calculateUtc(t).longitudes, angles: natalAngles(t, lat, lon)};};
 
 test('LLM layer is prepared but disabled', () => assert.equal(LLM_ENABLED, false));
@@ -49,7 +49,7 @@ test('affinities and tensions only come from real cross aspects, never padded', 
   const s = run(A, B, {premium: true});
   const cross = new Set(s.couple.crossAspectIds);
   assert.ok(s.couple.affinities.length > 0 && s.couple.tensions.length > 0, 'this pair has both');
-  for (const c of s.couple.affinities) assert.ok(['harmonious', 'mixed'].includes(c.tone));
+  for (const c of s.couple.affinities) assert.equal(c.tone, 'harmonious');
   for (const c of s.couple.tensions) assert.equal(c.tone, 'tense');
   assert.ok([...s.couple.affinities, ...s.couple.tensions].every(c => cross.has(c.id)));
 });
@@ -109,10 +109,10 @@ test('no contradictions: a body pair is never both affinity and tension', () => 
   for (const k of aff) assert.ok(!ten.has(k), k);
 });
 test('deterministic', () => assert.deepEqual(run(A, B), run(A, B)));
-test('editorial length: free 1,000–1,600 words; premium ≥ 2,900 with enough evidence', () => {
+test('editorial length (CTO block 3): free 1,200–1,800 words with enough evidence; premium ≥ 2,900', () => {
   const free = run(A, B), premium = run(A, B, {premium: true});
-  for (const p of free.people) assert.ok(p.words >= 200 && p.words <= 340, `person ${p.words}`);
-  assert.ok(free.words >= 1000 && free.words <= 1600, `free ${free.words}`);
+  for (const p of free.people) assert.ok(p.words >= 200 && p.words <= 450, `person ${p.words}`);
+  assert.ok(free.words >= 1200 && free.words <= 1800, `free ${free.words}`);
   assert.ok(premium.words >= 2900 && premium.words <= 5000, `premium ${premium.words}`);
 });
 test('no reading is generated from generic sign-only data: placements drive text', () => {
@@ -165,7 +165,8 @@ test('C-02: conjunctions are mixed, never purely tense; intense ones also name a
     const s = run({...A, date}, B, {premium: true});
     for (const ev of s.evidence) for (const a of ev.aspects.filter(x => x.type === 'conjunction')) assert.equal(a.tone, 'mixed', a.id);
     assert.ok(!s.couple.tensions.some(c => c.id.endsWith(':conjunction')));
-    for (const c of s.couple.affinities.filter(c => c.tone === 'mixed')) assert.ok(c.care, 'mixed card has a care note');
+    assert.ok(s.couple.affinities.every(c => c.tone === 'harmonious'), 'mixed contacts are not presented as affinities');
+    for (const c of s.couple.intense) {assert.equal(c.tone, 'mixed'); assert.ok(c.care && c.benefit, 'intense card names a possibility and a care note');}
   }
   const t = run(A, B).people[0].sections.find(x => x.key === 'contrasts').text;
   assert.match(t, /determinación|coherencia/);
@@ -184,7 +185,7 @@ test('C-06: chapter bridges, complementarity block, specific generic cards', () 
   assert.match(s.couple.bridges[1], /Ana/); assert.match(s.couple.bridges[2], /Leo/);
   assert.ok(s.couple.complement.length >= 1);
   const generic = [...s.couple.affinities, ...s.couple.tensions].filter(c => !/^(Dos|Lo que|Identidad|Una|Conversaciones|Palabras|Entre|Ternura|Gustos|Energía|Estructura|Cuidar|Seguridad|Un cariño|Afecto|Se impulsan|Optimismo|Agrado|Magnetismo|Cuando)/.test(c.title));
-  for (const c of generic) assert.match(c.story, /\(en [A-ZÁÉÍÓÚ]/, 'generic card names the signs: ' + c.story);
+  for (const c of generic) assert.match(c.story, /\((en|[A-ZÁÉÍÓÚ][\p{L} ]+ en) [A-ZÁÉÍÓÚ]/u, 'generic card names the signs: ' + c.story);
   for (const d of s.couple.daily.filter(d => d.status === 'signs')) assert.match(d.text, /lectura secundaria por signos/);
 });
 test('Gate 4: symbolic chemistry area for partners, absent for friendship', () => {
@@ -198,4 +199,30 @@ test('C-01: every unknown-time placement is sign-level only and proven for the l
     assert.ok(ev.dayWindow && ev.dayWindow.hours >= 23);
     for (const [k, p] of Object.entries(ev.placements)) assert.ok(p.stableOnly && p.degree === undefined && p.house === undefined, k);
   }
+});
+
+// ---------- Block 3 editorial acceptance (CTO) ----------
+const SAMPLE = [['1990-03-06', '07:45'], ['1990-07-14', '18:20'], ['1985-11-02', '03:10'], ['2001-05-20', '12:00'], ['1978-01-29', '21:05'], ['1996-09-09', '06:30']];
+const sample = (o = {}) => SAMPLE.flatMap(([d, t]) => [run({...A, date: d, time: t}, B, o), run({...A, date: d, time: '', unknownTime: true}, {...B, time: '', unknownTime: true}, o)]);
+test('block 3: no visible section is empty, in any edition or language', () => {
+  for (const lang of ['es', 'en']) for (const premium of [false, true]) for (const s of sample({lang, premium}))
+    for (const p of s.people) for (const x of p.sections) assert.ok(x.text.trim().length > 20, `${lang}/${premium}/${p.name}/${x.key}`);
+});
+test('block 3: grammar — no adjective/noun template mismatches', () => {
+  const BAD = /una forma de actuar (la|el|los|las|un|una) |tiende a ser (la|el|los|las) |suele ser (la|el|los|las) (capacidad|iniciativa|visión)|a way of acting that is (a|the) /i;
+  for (const lang of ['es', 'en']) for (const premium of [false, true]) for (const s of sample({lang, premium})) {const t = allText(s); assert.ok(!BAD.test(t), t.split('\n').find(l => BAD.test(l)));}
+});
+test('block 3: one reading per real contact — no shared card stories, no alias reuse, distinct titles', () => {
+  for (const premium of [false, true]) for (const s of sample({premium})) {
+    const cards = [...s.couple.affinities, ...s.couple.intense, ...s.couple.tensions];
+    assert.equal(new Set(cards.map(c => c.story)).size, cards.length, 'card stories are unique');
+    assert.equal(new Set(cards.map(c => c.title)).size, cards.length, 'titles are unique');
+    const story = k => cards.find(c => c.key === k)?.story;
+    for (const [x, y] of [['Ascendant|Moon', 'Moon|Sun'], ['Sun|Venus', 'Moon|Venus'], ['Ascendant|Mars', 'Ascendant|Venus'], ['Jupiter|Moon', 'Jupiter|Sun'], ['Jupiter|Venus', 'Jupiter|Sun']])
+      if (story(x) && story(y)) assert.notEqual(story(x), story(y), `${x} reuses ${y}`);
+  }
+});
+test('block 3: no claims of attraction, reciprocity, trust or real feelings asserted from one aspect', () => {
+  const ASSERT = /\bhay magnetismo|there is magnetism|tienen puntos de encuentro reales|real meeting points|^(Confianza|Trust) |^(Un afecto|Affection) que se siente/im;
+  for (const lang of ['es', 'en']) for (const s of sample({lang, premium: true})) {const t = allText(s) + '\n' + [...s.couple.intense].flatMap(c => [c.story, c.benefit, c.care]).join('\n'); assert.ok(!ASSERT.test(t), t.split('\n').find(l => ASSERT.test(l)));}
 });

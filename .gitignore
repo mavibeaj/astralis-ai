@@ -164,3 +164,4 @@ geography-stats.json
 geo-perf.json
 time.txt
 __pycache__/
+a11y-*.json

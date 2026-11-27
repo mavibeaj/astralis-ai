@@ -18,6 +18,8 @@ jobs:
       NEXT_TELEMETRY_DISABLED: '1'
       # CI builds a real GeoNames subset (one country per continent + Peru); the deploy build is world-wide.
       GEOGRAPHY_COUNTRIES: PE,JP,KE,IS,AU,BR,ES,US,GB
+      # Founder-owned secret with regexes for personal data; the guard test skips when it is unset.
+      PRIVATE_PATTERNS: ${{ secrets.PRIVATE_PATTERNS }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -67,16 +69,20 @@ jobs:
       - name: Install browser test runtime
         if: matrix.check == 'build'
         run: |
-          npm install --no-save --package-lock=false playwright@1.56.1
+          npm install --no-save --package-lock=false playwright@1.56.1 axe-core@4.10.2
           npx playwright install --with-deps chromium
-      - name: Test desktop and mobile browser journey
+      - name: Test desktop and mobile browser journey (+ axe WCAG 2.1 A/AA, serious/critical fail)
         if: matrix.check == 'build'
+        env:
+          A11Y: strict
         run: node tests/browser-smoke.mjs
       - name: Upload browser screenshots
         if: always() && matrix.check == 'build'
         uses: actions/upload-artifact@v4
         with:
           name: browser-preview
-          path: browser-*.png
+          path: |
+            browser-*.png
+            a11y-*.json
           if-no-files-found: warn
           retention-days: 7

@@ -11,6 +11,10 @@ const PERSONAL = new Set(['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Ascendant'
 const ANGLES = {conjunction: 0, sextile: 60, square: 90, trine: 120, opposition: 180};
 // Natal orbs by the wider class of the pair (conj/opp, trine/square, sextile).
 const ORB = {luminary: [8, 7, 5], personal: [7, 6, 4], social: [6, 5, 3], angle: [6, 5, 3], outer: [5, 4, 3]};
+export const NATAL_ORBS = ORB;
+// EXPERIMENTAL (CTO block 3): tighter orbs proposed for cross-chart contacts only. Not a default; evaluated in
+// SYNASTRY_ORBS_REPORT.md. Nodes: specific contacts up to 3° (nodes are not used as cross contacts in the narrative).
+export const SYNASTRY_ORBS_CANDIDATE = Object.freeze({luminary: [7, 6, 4], personal: [6, 5, 3], social: [5, 4, 3], angle: [5, 4, 3], outer: [4, 3, 2], node: [3, 3, 0]});
 const CLASS = p => (p === 'Sun' || p === 'Moon') ? 'luminary' : ['Mercury', 'Venus', 'Mars'].includes(p) ? 'personal' : ['Jupiter', 'Saturn'].includes(p) ? 'social' : (p === 'Ascendant' || p === 'Midheaven') ? 'angle' : 'outer';
 const RANK = ['outer', 'social', 'angle', 'personal', 'luminary'];
 // Weights for the elemental/modal balance (outer planets are generational and excluded).
@@ -24,7 +28,7 @@ function placement(lon, house) {
   return {lon: norm(lon), sign, degree: Math.round((norm(lon) - sign * 30) * 100) / 100, element: signElement(sign), modality: signModality(sign), ...(house ? {house} : {})};
 }
 
-export function natalAspects(points) {
+export function natalAspects(points, orbs = ORB) {
   const out = [], keys = Object.keys(points);
   for (let i = 0; i < keys.length; i++) for (let j = i + 1; j < keys.length; j++) {
     const a = keys[i], b = keys[j];
@@ -33,7 +37,7 @@ export function natalAspects(points) {
     const cls = [CLASS(a), CLASS(b)].sort((x, y) => RANK.indexOf(y) - RANK.indexOf(x))[0];
     const d = Math.abs(norm(points[a] - points[b])); const dist = d > 180 ? 360 - d : d;
     for (const [type, angle] of Object.entries(ANGLES)) {
-      const orb = ORB[cls][type === 'conjunction' || type === 'opposition' ? 0 : type === 'sextile' ? 2 : 1];
+      const orb = orbs[cls][type === 'conjunction' || type === 'opposition' ? 0 : type === 'sextile' ? 2 : 1];
       const deviation = Math.abs(dist - angle);
       if (deviation <= orb) {
         const [x, y] = [a, b].sort();
