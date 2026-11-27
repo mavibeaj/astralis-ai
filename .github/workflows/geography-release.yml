@@ -6,6 +6,10 @@ name: Geography catalog release
 on:
   push:
     tags: ['geo-*']
+  # Founder path without a terminal: GitHub → Releases → Draft a new release → tag `geo-YYYY.MM.DD` (new tag)
+  # → target branch claude/block4 → Publish. The asset and lock file are attached automatically.
+  release:
+    types: [published]
 permissions:
   contents: write
 concurrency:
@@ -19,6 +23,7 @@ jobs:
       NEXT_TELEMETRY_DISABLED: '1'
       GEOGRAPHY_REBUILD: '1'
       PRIVATE_PATTERNS: ${{ secrets.PRIVATE_PATTERNS }}
+    if: startsWith(github.event.release.tag_name || github.ref_name, 'geo-')
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,7 +38,7 @@ jobs:
       - name: Package with attribution, provenance and transformations
         id: pkg
         run: |
-          tag="${GITHUB_REF_NAME}"
+          tag="${{ github.event.release.tag_name || github.ref_name }}"
           generated=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           mkdir -p bundle && cp -r public/geography bundle/ && cp geography-stats.json bundle/
           cat > bundle/geography/ATTRIBUTION.md <<MD
