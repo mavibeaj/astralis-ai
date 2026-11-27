@@ -88,6 +88,17 @@ try {
     for (let n = 1; n <= 8; n++) await page.locator(`#ch-${n}`).screenshot({path: `${SHOTS}-${w}-ch${n}.png`});
     await page.locator('.story-cover').screenshot({path: `${SHOTS}-${w}-cover.png`});
     await page.screenshot({path: `${SHOTS}-${w}-results.png`, fullPage: true});
+    // Accessibility audit (axe-core, optional: A11Y=1). Landing, form and results states are covered by the
+    // same page after the journey; violations are written to a11y-<width>.json and serious/critical ones fail.
+    if (process.env.A11Y) {
+      const {readFileSync, writeFileSync} = await import('node:fs');
+      await page.addScriptTag({content: readFileSync('node_modules/axe-core/axe.min.js', 'utf8')});
+      const res = await page.evaluate(async () => await window.axe.run(document, {runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']}));
+      const v = res.violations.map(x => ({id: x.id, impact: x.impact, help: x.help, nodes: x.nodes.length, sample: x.nodes.slice(0, 3).map(n => n.target.join(' '))}));
+      writeFileSync(`a11y-${w}.json`, JSON.stringify(v, null, 1));
+      console.log(`a11y ${w}: ${v.length} rule(s) violated: ${v.map(x => `${x.id}[${x.impact}]×${x.nodes}`).join(', ') || 'none'}`);
+      if (process.env.A11Y === 'strict') assert.ok(!v.some(x => ['serious', 'critical'].includes(x.impact)), 'serious/critical a11y violations');
+    }
     // Technical chapter on demand: wheels come from engine data.
     await page.locator('#ch-10 > summary').click();
     await page.getByRole('heading', {name: 'Índice simbólico experimental'}).waitFor();
