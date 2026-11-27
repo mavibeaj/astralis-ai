@@ -1,4 +1,35 @@
-# QA report (updated 2026-11-27, block 2: PR #9)
+# QA report (updated 2026-11-27, block 3: PR #10)
+
+## Block 3 (PR #10, `claude/block3`)
+**Verification run (all executed):** typecheck ✓ · `npm test` 241 tests, 233 pass, 0 fail, 8 skipped (7 need the full catalog and pass in CI; 1 is the privacy guard, which needs the `PRIVATE_PATTERNS` secret) · `npm run build:fixture` ✓ · Playwright desktop 1280 + mobile 390 ✓, now incl. Lima · axe-core WCAG 2.1 A/AA: 0 violations (1280 and 390).
+
+**Gate 1, live:** Cloudflare deployed PR #9 head `d7610ad` → https://3f9f069f.astralis-ai.pages.dev. The `preview` job on that commit passed: catalog v2 `geonames:world`, 248 countries, 5,662,438 places, `PE/0.json` 200 `application/json` br 151,460 bytes, and the full journey incl. Chiclayo. Lima was checked by hand in the built-in browser on that URL: "Lima, Lima Province, Perú", −12.04318, −77.02824, America/Lima. PR #10 commits are queued at Cloudflare.
+
+**Deploy failure (c5c8ccb):** "Build failed". The log is only on the Cloudflare dashboard, and no agent has a session there. Build inputs were identical to the previous successful commit (verified with `git diff`). Most likely cause, not confirmed: the per-build GeoNames import (time limit or download). Fix: pinned catalog release (T-23); see DEPLOYMENT.md.
+
+**Privacy:** see PRIVACY_INCIDENT.md (no values). Current files are clean. History, 15 CI screenshot artefacts and CI logs still hold the old fixture date, never next to a name. A QA line that labelled it as personal and the partner's first name were removed (d7610ad).
+
+**Editorial (cosmic-story-0.2), CTO block 3 acceptance:**
+| Criterion | Result | How verified |
+|---|---|---|
+| No empty visible section | 0 in 10 corpus cases. 0 across 24 charts × 2 editions × 2 languages | `block 3: no visible section is empty` |
+| Grammatical sentences | Root cause: an adjective template (`style`) fell back to a noun phrase (`gift`). Templates are now field-aware. 0 matches of the bad patterns | `block 3: grammar` + corpus scan |
+| One reading per real contact | The 6 library aliases (Asc–Moon→Sun–Moon, Sun–Venus→Moon–Venus, Asc–Mars→Asc–Venus, Jupiter–Moon/Venus→Jupiter–Sun, Asc–Sun→Sun–Sun) are no longer used. Each gets a reading built for that contact (roles: identity, emotional needs, values and affection, initiative…). 0 duplicate stories, 0 duplicate titles | `block 3: one reading per real contact` |
+| Three groups | affinities (harmonious) / intense or mixed (conjunctions: possibility + care) / tensions. Mixed contacts never appear as affinities | C-02 test updated |
+| No claims from one aspect | "Tienen puntos de encuentro reales" → "La lectura identifica temas simbólicos de afinidad". Benefits framed as "tema por cultivar". "Hay magnetismo" → "puede haber magnetismo" | `block 3: no claims…` |
+| C06 (both times unknown) | Sign-level daily comparisons now allowed when the sign is stable all day: daily evidence/signs/questions 1/0/10 → 1/4/6 | metrics |
+| C08 low evidence | Now really low evidence (both times unknown): 21 → 8 contacts | metrics |
+| Repetition | C07 30.3% → 19.0%. ES cases 17.6–23.8% (block 2: 15–34%) | `sharedAcrossCases` |
+| Length | Free 1,614–1,800 (CTO 1,200–1,800). Chapter 3 no longer repeats card stories; daily areas show only the day-to-day line; fixed "space" advice is premium-only; needX/needY are premium-only | metrics, length test |
+
+**Library issues for ChatGPT (knowledge.mjs, not edited by Claude):** EN Leo `need` "free to express itself", Virgo `need` "its contribution", Virgo `shadow` "over-demanding of itself" (use "themselves/their"). Benefits stated as facts ("Confianza y crecimiento mutuo", "Un afecto que se siente recíproco"): narrative now frames them, but the library should hedge them. Aliases: delete them or write their own entries.
+
+**Scoring (CALIBRATION_BLOCK3.md, original seed 20261127 + independent seed 7302026, 400 pairs each):** symmetric polarities lower the time-known mean from 57.5 to 53.2 (validation: 57.8 → 53.6) without forcing 50. House overlays add +2.4 on average (they are mostly positive). Removing both birth times moves the index by −5.3 with the candidate and −0.3 with `sym-c` (overlays off). So the current candidate penalises an unknown time and sym-c does not. Nodes have no effect (±0.1). ±1 h changes the index by ≥ 5 points in 12–16% of pairs in every set.
+
+**Synastry orbs (experimental):** contacts 29.9 → 25.0 (−16%). Cards shown 16 → 15.3. No rise in pairs without affinity or tension. ±1 h stability unchanged (Jaccard ≈ 0.7). Narrower orbs barely change what the reading shows, so the redundancy came from library aliases and repeated text, not from orbs.
+
+**LLM budget (hypothetical price tiers, not provider quotes):** chapters 3–8 rewrite ≈ 4.8 k in / 4.2 k out tokens. Large tier: expected 0.094, worst (1 retry) 0.157 → **deterministic fallback**. Medium tier: 0.031 / 0.052 → within the cap and under the 0.05 target. Small tier: 0.008 / 0.013. The block-2 `todo` cost test was replaced by an enforced budget test.
+
 
 ## Beta readiness block (PR #9)
 - **Tests:** typecheck ✓; `npm test` 227 tests, 220 pass, 0 fail, 7 skipped (they need the full GeoNames catalog and pass in CI). Build ✓; Playwright desktop + mobile ✓.
