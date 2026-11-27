@@ -1,10 +1,15 @@
-# Handoff: Claude → ChatGPT / founder (2026-11-26)
+# Handoff: Claude → ChatGPT / founder (2026-11-27)
+
+**Latest delivery:** PR #8 `claude/cosmic-story-v2` (base `chatgpt/story-first`, #7). Individual natal readings, an 8-chapter story, and a chaptered premium report. Next prompt for ChatGPT: `PROMPT_FOR_CHATGPT.md`. Task board: `AGENT_TASK_BOARD.md`.
+
 
 ## Merge order
 1. **#3 P0 geography**: `claude/geo-p0-fix` → `feature/cosmic-match-foundation`. CI and the world import are green.
 2. **#4 symbolic-0.2 candidate**: `claude/synastry-0.2` → `feature/cosmic-match-foundation`. Independent of #3.
 3. **#5 redesign + wheels**: `claude/product-experience`. After #3 merges, retarget it to the integration branch. It already contains #4; the `page.tsx` conflict was resolved in favour of the redesign.
 4. **#6 checkout simulation**: `claude/checkout-sim` → `claude/product-experience`. Retarget it after #5 merges.
+5. **#7 story-first (ChatGPT)** → `claude/checkout-sim`.
+6. **#8 Cosmic Story v2** → `chatgpt/story-first`.
 
 ## Owner action required (agents cannot do this)
 1. In Cloudflare Pages → astralis-ai → Settings → Build, confirm:

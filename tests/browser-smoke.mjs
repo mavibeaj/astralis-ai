@@ -72,27 +72,35 @@ try {
     await page.getByLabel('Ambas personas son adultas', {exact: false}).check();
     await page.getByRole('button', {name: 'Calcular nuestra conexión'}).click();
     await page.getByText('Calculando posiciones planetarias', {exact: false}).waitFor();
-    await page.getByRole('heading', {name: 'Índice simbólico experimental'}).waitFor({timeout: 15000});
-    await page.getByRole('heading',{name:'La historia de su conexión'}).waitFor();
-    await page.getByRole('heading',{name:'Lo que los une'}).waitFor();
-    await page.getByRole('heading',{name:'Donde podrían chocar'}).waitFor();
-    assert.equal(await page.locator('details.wheels').getAttribute('open'),null);
-    await page.getByText('Explorar cartas y detalles astrológicos',{exact:true}).click();
-    // Wheels come from engine data: synastry shows both charts' bodies, houses and aspects.
+    // Story-first results: cover + 8 narrative chapters before anything technical.
+    await page.locator('.story-cover h1').waitFor({timeout: 15000});
+    assert.ok(await page.locator('details.chapter').count() >= 10, 'chapters');
+    assert.ok(await page.locator('#ch-1 .story-card').count() >= 11, 'person A sections');
+    assert.ok(await page.locator('#ch-2 .story-card').count() >= 11, 'person B sections');
+    assert.match(await page.locator('#ch-1 .story-card.essence p').first().textContent(), /Ana tiene el Sol en Piscis/);
+    assert.equal(await page.locator('#ch-10').getAttribute('open'), null, 'technical chapter closed by default');
+    await page.locator('#ch-1 .basis summary').first().click();
+    await page.locator('#ch-1 .basis li').first().waitFor();
+    for (const n of [6, 7]) await page.locator(`#ch-${n} > summary`).click(); // collapsed by default
+    for (let n = 1; n <= 8; n++) await page.locator(`#ch-${n}`).screenshot({path: `browser-${w}-ch${n}.png`});
+    await page.locator('.story-cover').screenshot({path: `browser-${w}-cover.png`});
+    await page.screenshot({path: `browser-${w}-results.png`, fullPage: true});
+    // Technical chapter on demand: wheels come from engine data.
+    await page.locator('#ch-10 > summary').click();
+    await page.getByRole('heading', {name: 'Índice simbólico experimental'}).waitFor();
     const wheel = page.locator('figure.wheel');
     assert.ok(await wheel.locator('g.body').count() >= 20, 'synastry bodies');
     assert.ok(await wheel.locator('line.aspect').count() > 0, 'aspects');
     assert.ok(await wheel.locator('text.house-num').count() === 12, 'houses');
     await wheel.locator('g.body circle.body-bg').nth(2).hover();
     await wheel.locator('g.tooltip').waitFor();
-    await page.screenshot({path: `browser-${w}-results.png`, fullPage: true});
     await wheel.screenshot({path: `browser-${w}-synastry-wheel.png`});
     await page.getByRole('tab', {name: /Carta A/}).click();
     await page.getByText('Grados exactos').click();
     assert.ok(await page.locator('.positions td').count() >= 13);
-    // Premium demo, share card
+    // Premium excerpt, share card
     await page.getByRole('button', {name: 'Ver demostración gratuita'}).click();
-    assert.equal(await page.locator('.premium-demo article').count(), 5);
+    assert.ok(await page.locator('.premium-demo p').count() >= 2);
     const download = page.waitForEvent('download');
     await page.getByRole('button', {name: 'Descargar tarjeta · 9:16'}).click();
     assert.match((await download).suggestedFilename(), /\.png$/);
@@ -107,7 +115,8 @@ try {
     await page.getByRole('button', {name: 'Confirmar pago simulado'}).click();
     const code = await page.getByTestId('recovery-code').textContent({timeout: 15000});
     assert.match(code, /^[A-Z0-9]{20}$/);
-    assert.equal(await page.locator('.report-view article').count(), 5);
+    assert.ok(await page.locator('.report-view article').count() >= 3);
+    assert.match(await page.locator('.report-view').textContent(), /8 capítulos/);
     const reportDl = page.waitForEvent('download');
     await page.getByRole('button', {name: 'Descargar informe'}).click();
     assert.match((await reportDl).suggestedFilename(), /^cosmic-match-premium-sim_ord_.*\.html$/);
@@ -129,8 +138,11 @@ try {
     await page.getByLabel('No conozco la hora exacta').check();
     await page.getByRole('button', {name: 'Continuar'}).click();
     await page.getByRole('button', {name: 'Calcular nuestra conexión'}).click();
-    await page.getByRole('heading', {name: /Lectura parcial/}).waitFor({timeout: 15000});
-    await page.getByText('Explorar cartas y detalles astrológicos',{exact:true}).click();
+    await page.locator('.story-cover h1').waitFor({timeout: 15000});
+    await page.locator('.story-cover .notice').waitFor();
+    assert.match(await page.locator('#ch-2 .story-card').nth(2).textContent(), /no podemos calcular el Ascendente/);
+    await page.locator('#ch-10 > summary').click();
+    await page.getByRole('heading', {name: /Lectura parcial/}).waitFor();
     await page.getByRole('tab', {name: /Carta B/}).click();
     assert.equal(await page.locator('figure.wheel text.house-num').count(), 0);
     await noOverflow(page);

@@ -2,6 +2,7 @@
 import {useRef, useState} from 'react';
 import {createCommerce, reportHtml, type Order, type Report} from '../../lib/commerce.mjs';
 import type {MatchResult} from '../../lib/match-preview.mjs';
+import type {CosmicStory} from '../../lib/natal-interpretation/index.mjs';
 import {catalog} from '../../config/product';
 
 type Rel = 'partner' | 'crush' | 'friendship';
@@ -33,9 +34,13 @@ export function ReportView({report, order, es}: {report: Report; order: Order; e
   const html = reportHtml(report, order, es);
   return <div className="report-view">
     <p className="sim-badge">{es ? 'SIMULACIÓN · no se realizó ningún cobro' : 'SIMULATION · no charge was made'}</p>
-    <h3>Cosmic Match Premium · {report.input!.index}/100</h3>
+    {report.story ? <><h3>{report.story.couple.title}</h3>
+      <p className="fine">{es ? `Informe premium de ${report.story.words} palabras en 8 capítulos, listo para descargar o imprimir.` : `${report.story.words}-word premium report in 8 chapters, ready to download or print.`}</p>
+      {report.story.people.map((p: {name: string; sections: {key: string; title: string; text: string}[]}) => <article key={p.name}><h4>{p.name} · {p.sections[0].title}</h4><p>{p.sections[0].text}</p></article>)}
+      <article><h4>{es ? 'La historia de ambos' : 'Your story together'}</h4><p>{report.story.couple.story[0]?.text}</p></article></>
+    : <><h3>Cosmic Match Premium · {report.input!.index}/100</h3>
     <p>{report.content!.summary}</p>
-    {report.content!.themes.map(t => <article key={t.key}><h4>{labels[t.key]} · {report.input!.dimensions[t.key]}/100</h4><p>{t.reflection}</p><p className="activity">{t.activity}</p></article>)}
+    {report.content!.themes.map(t => <article key={t.key}><h4>{labels[t.key]} · {report.input!.dimensions[t.key]}/100</h4><p>{t.reflection}</p><p className="activity">{t.activity}</p></article>)}</>}
     <div className="cta-row">
       <button type="button" className="ghost" onClick={() => download(html, `cosmic-match-premium-${order.id}.html`)}>{es ? 'Descargar informe' : 'Download report'}</button>
       <button type="button" className="ghost" onClick={() => printHtml(html)}>{es ? 'Imprimir / Guardar PDF' : 'Print / Save PDF'}</button>
@@ -46,7 +51,7 @@ export function ReportView({report, order, es}: {report: Report; order: Order; e
 }
 
 type Phase = 'idle' | 'summary' | 'processing' | 'declined' | 'network' | 'generating' | 'ready' | 'failed';
-export default function Checkout({result, lang, relationship, onReady}: {result: MatchResult; lang: 'en' | 'es'; relationship: Rel; onReady?: () => void}) {
+export default function Checkout({result, lang, relationship, onReady, story}: {result: MatchResult; lang: 'en' | 'es'; relationship: Rel; onReady?: () => void; story?: CosmicStory | null}) {
   const es = lang === 'es';
   const [phase, setPhase] = useState<Phase>('idle');
   const [outcome, setOutcome] = useState<'succeed' | 'decline' | 'network_error'>('succeed');
@@ -74,7 +79,7 @@ export default function Checkout({result, lang, relationship, onReady}: {result:
       if (paid.status === 'failed') {setPhase('declined'); return;}
     } catch (e) {setPhase((e as {code?: string}).code === 'provider_unreachable' ? 'network' : 'failed'); return;}
     setPhase('generating');
-    const r = await c.generateReport(order.id, {result, locale: lang, relationship});
+    const r = await c.generateReport(order.id, {result, locale: lang, relationship, attachment: story ?? undefined});
     setReport({...r}); setOrder({...c.get(order.id)});
     setPhase(r.status === 'ready' ? 'ready' : 'failed');
     if (r.status === 'ready') onReady?.();

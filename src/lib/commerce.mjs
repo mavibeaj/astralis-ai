@@ -92,7 +92,7 @@ export function createCommerce({catalog, provider = mockPaymentProvider(), now =
     const event = provider.complete(order.sessionId, outcome);
     return handleEvent(event).order;
   }
-  async function generateReport(orderId, {result, locale, relationship, adapter}) {
+  async function generateReport(orderId, {result, locale, relationship, adapter, attachment}) {
     const order = get(orderId);
     if (order.status !== 'paid_simulated' && order.status !== 'fulfilled') throw new CommerceError('payment_required');
     const existing = reports.get(orderId);
@@ -105,6 +105,8 @@ export function createCommerce({catalog, provider = mockPaymentProvider(), now =
     try {
       const run = await simulatePremiumExecution({result, locale, relationship, adapter: adapter ?? deterministicReportAdapter(result, locale, relationship), pricing: SIMULATION_PRICING});
       Object.assign(report, {content: run.report, input, locale, relationship, simulatedCostMicroUsd: run.simulatedCostMicroUsd, actualChargeMicroUsd: 0, generatedAt: now()});
+      // Optional deterministic premium story (built client-side; stored only in this browser in the simulation).
+      if (attachment) report.story = attachment;
       transition(report, REPORT_FLOW, 'ready', now);
       if (order.status === 'paid_simulated') transition(order, ORDER_FLOW, 'fulfilled', now);
     } catch (e) {
@@ -126,7 +128,31 @@ export function createCommerce({catalog, provider = mockPaymentProvider(), now =
 }
 
 /** Standalone printable HTML for download (escaped; no scripts). */
+const ESC = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const REPORT_CSS = `@page{size:A4;margin:18mm}body{font-family:Georgia,'Iowan Old Style',serif;color:#1d1640;line-height:1.65;max-width:760px;margin:0 auto;padding:24px}
+.cover{min-height:92vh;display:flex;flex-direction:column;justify-content:center;text-align:center;background:radial-gradient(circle at 50% 30%,#2b1f5c,#0b0a1f);color:#f6f2ff;border-radius:18px;padding:40px;page-break-after:always}
+.cover h1{font-size:2.4rem;font-weight:500;margin:.4rem 0}.cover .names{color:#f3d9a4;font-size:1.3rem}.cover .k{letter-spacing:.2em;text-transform:uppercase;font-size:.75rem;color:#c9b6ff}
+h2{font-weight:500;font-size:1.6rem;border-bottom:1px solid #d8b36a;padding-bottom:.3rem;margin-top:2.2rem}h3{font-size:1.1rem;margin:1.2rem 0 .3rem;color:#3a2a78}
+.chapter{page-break-before:always}.card{border:1px solid #e3dcf3;border-radius:12px;padding:12px 16px;margin:12px 0;break-inside:avoid}
+dt{font-weight:600;font-size:.85rem;color:#5b45b0;margin-top:.4rem}dd{margin:0}.sim{border:2px dashed #b08a3c;padding:10px 14px;border-radius:10px;background:#fff8e6;color:#1d1640}small{color:#666}.toc li{margin:.2rem 0}`;
+function storyHtml(st, report, order, es) {
+  const e = ESC, C = st.couple, names = st.people.map(p => p.name);
+  const L = es ? {k: 'Cosmic Match Premium', toc: 'Contenido', ch: [`El universo de ${names[0]}`, `El universo de ${names[1]}`, 'La historia de ambos', 'Compatibilidades', 'Diferencias y desafíos', 'En la vida cotidiana', 'Consejos para ustedes', 'Su historia en breve'], detail: 'En detalle', daily: 'En el día a día', benefit: 'Qué puede aportar', tip: 'Prueben esto', mis: 'Posible malentendido', und: 'Lo que conviene comprender', help: 'Qué puede ayudar', houses: 'Cómo se activan sus casas', q: 'Preguntas para hacerse', act: 'Actividades', basis: 'Base astrológica', sim: 'SIMULACIÓN — documento de demostración. No se realizó ningún cobro.', disc: 'Interpretación simbólica para conversar y reflexionar; no es una predicción ni una evaluación científica.'}
+    : {k: 'Cosmic Match Premium', toc: 'Contents', ch: [`The universe of ${names[0]}`, `The universe of ${names[1]}`, 'Your story together', 'Compatibilities', 'Differences and challenges', 'In everyday life', 'Advice for you both', 'Your story in brief'], detail: 'In detail', daily: 'Day to day', benefit: 'What it can bring', tip: 'Try this', mis: 'Possible misunderstanding', und: 'Worth understanding', help: 'What can help', houses: 'How you activate each other\'s houses', q: 'Questions to ask each other', act: 'Activities', basis: 'Astrological basis', sim: 'SIMULATION — demo document. No charge was made.', disc: 'Symbolic interpretation for conversation and reflection; not a prediction or scientific assessment.'};
+  const person = p => p.sections.map(s => `<h3>${e(s.title)}</h3><p>${e(s.text)}</p>`).join('') + (p.details.length ? `<h3>${L.detail}</h3>` + p.details.map(d => `<p>${e(d.text)}</p>`).join('') : '');
+  const card = c => `<div class="card"><h3>${e(c.title)}</h3><p>${e(c.story)}</p><dl><dt>${L.daily}</dt><dd>${e(c.daily)}</dd>${c.benefit ? `<dt>${L.benefit}</dt><dd>${e(c.benefit)}</dd>` : ''}${c.tip ? `<dt>${L.tip}</dt><dd>${e(c.tip)}</dd>` : ''}${c.misunderstanding ? `<dt>${L.mis}</dt><dd>${e(c.misunderstanding)}</dd>` : ''}${c.needX ? `<dt>${L.und}</dt><dd>${e(c.needX)} ${e(c.needY)}</dd>` : ''}${c.action ? `<dt>${L.help}</dt><dd>${e(c.action)}</dd>` : ''}<dt>${L.basis}</dt><dd><small>${e(c.technical)}</small></dd></dl></div>`;
+  const bodies = [person(st.people[0]), person(st.people[1]), C.story.map(x => `<p>${e(x.text)}</p>`).join('') + (C.overlays.length ? `<h3>${L.houses}</h3>` + C.overlays.map(o => `<p>${e(o.text)}</p>`).join('') : ''),
+    C.affinities.map(card).join(''), C.tensions.map(card).join(''), C.daily.map(d => `<h3>${e(d.title)}</h3><p>${e(d.text)}</p>`).join(''),
+    `<p>${e(C.advice.communication)}</p><p>${e(C.advice.needs)}</p><p>${e(C.advice.differences)}</p><p>${e(C.advice.shared)}</p><p>${e(C.advice.space)}</p><h3>${L.q}</h3><ul>${C.advice.questions.map(q => `<li>${e(q)}</li>`).join('')}</ul><h3>${L.act}</h3><ul>${C.advice.activities.map(q => `<li>${e(q)}</li>`).join('')}</ul>`,
+    `<p>${e(C.closing)}</p>`];
+  return `<!doctype html><html lang="${es ? 'es' : 'en'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cosmic Match Premium · ${e(C.title)}</title><style>${REPORT_CSS}</style></head><body>
+<section class="cover"><p class="k">${L.k}</p><h1>${e(C.title)}</h1><p class="names">${e(names[0])} ✦ ${e(names[1])}</p><p><small style="color:#c9b6ff">${e(report.generatedAt?.slice(0, 10))}</small></p></section>
+<p class="sim">${L.sim}</p><h2>${L.toc}</h2><ol class="toc">${L.ch.map(c => `<li>${e(c)}</li>`).join('')}</ol>
+${bodies.map((b, i) => `<section class="chapter"><h2>${String(i + 1).padStart(2, '0')} · ${e(L.ch[i])}</h2>${b}</section>`).join('')}
+<hr><small>${L.disc} · ${e(order.id)}</small></body></html>`;
+}
 export function reportHtml(report, order, es) {
+  if (report.story?.couple && report.story?.people) return storyHtml(report.story, report, order, es);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
   const labels = es ? {emotional: 'Conexión emocional', communication: 'Comunicación', attraction: 'Atracción simbólica', stability: 'Estabilidad', growth: 'Crecimiento'} : {emotional: 'Emotional connection', communication: 'Communication', attraction: 'Symbolic attraction', stability: 'Stability', growth: 'Growth'};
   const themes = report.content.themes.map(t => `<section><h2>${esc(labels[t.key])} · ${report.input.dimensions[t.key]}/100</h2><p>${esc(t.reflection)}</p><p><em>${esc(t.activity)}</em></p></section>`).join('');

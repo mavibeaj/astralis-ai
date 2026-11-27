@@ -114,3 +114,16 @@ test('mock provider exposes no payment-detail inputs', () => {
   const p = mockPaymentProvider();
   assert.deepEqual(Object.keys(p).sort(), ['complete', 'createSession', 'kind']);
 });
+test('premium report with story attachment: cover, 8 chapters, escaped, simulation banner', async () => {
+  const {storyFromResult} = await import('../src/lib/natal-interpretation/index.mjs');
+  const story = storyFromResult(result, {lang: 'es', names: ['Ana <b>', 'Leo'], relationship: 'partner', premium: true});
+  const c = createCommerce({catalog});
+  const o = order(c); c.startCheckout(o.id); c.pay(o.id);
+  const r = await c.generateReport(o.id, {...ctx, attachment: story});
+  const html = reportHtml(r, c.get(o.id), true);
+  assert.match(html, /class="cover"/);
+  assert.equal((html.match(/<section class="chapter">/g) ?? []).length, 8);
+  assert.match(html, /SIMULACIÓN/);
+  assert.ok(html.includes('Ana &lt;b&gt;') && !html.includes('Ana <b>'));
+  assert.ok(!/<script/i.test(html));
+});
