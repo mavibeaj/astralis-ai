@@ -1,0 +1,12 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {angularDistance,aspectBetween,compatibility,WEIGHTS} from '../src/lib/compatibility.mjs';
+const a={Sun:20,Moon:350,Mercury:45,Venus:60,Mars:90,Saturn:120,Jupiter:150},b={Sun:140,Moon:110,Mercury:225,Venus:180,Mars:60,Saturn:270,Jupiter:20};
+test('weights sum to 100',()=>assert.equal(Object.values(WEIGHTS).reduce((x,y)=>x+y,0),100));
+test('wrap around zodiac',()=>assert.equal(angularDistance(359,1),2));
+test('invalid longitude',()=>assert.throws(()=>angularDistance(360,0)));
+test('exact trine',()=>assert.equal(aspectBetween(0,120).contribution,1));
+test('out of orb',()=>assert.equal(aspectBetween(0,109),null));
+test('determinism',()=>assert.deepEqual(compatibility(a,b),compatibility(a,b)));
+test('symmetry of overall index',()=>assert.equal(compatibility(a,b).index,compatibility(b,a).index));
+test('no data produces no index',()=>assert.equal(compatibility({},{}).index,null));
+test('partial data flagged',()=>assert.equal(compatibility({Moon:0},{Moon:120}).dimensions.emotional.coverage,1/3));
+test('bounded index',()=>{const v=compatibility(a,b);assert.ok(v.index>=0&&v.index<=100)});

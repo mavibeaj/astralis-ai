@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as A from 'astronomy-engine';
+import {natalAngles,wholeSignHouse,validCoordinates} from '../src/lib/natal-angles.mjs';
+import {matchPreview} from '../src/lib/match-preview.mjs';
+const instant=new Date('2000-01-01T12:00:00Z');
+const dist=(a,b)=>Math.abs(((a-b+540)%360)-180);
+test('angles change with geographic location at identical UTC time',()=>{const lima=natalAngles(instant,-12.05,-77.04),tokyo=natalAngles(instant,35.68,139.69);assert.ok(dist(lima.ascendant,tokyo.ascendant)>10);assert.ok(dist(lima.midheaven,tokyo.midheaven)>10)});
+test('ascendant lies on eastern geometric horizon',()=>{for(const [lat,lon] of [[-12.05,-77.04],[51.5,-.12],[70,20],[-70,20],[0,0]]){const c=natalAngles(instant,lat,lon);const t=A.MakeTime(instant);const angle=c.ascendant*Math.PI/180;const v=A.RotateVector(A.Rotation_ECT_EQD(t),new A.Vector(Math.cos(angle),Math.sin(angle),0,t));const eq=A.EquatorFromVector(v);const h=A.Horizon(t,new A.Observer(lat,lon,0),eq.ra,eq.dec);assert.ok(Math.abs(h.altitude)<1e-6);assert.ok(h.azimuth>0&&h.azimuth<180);}});
+test('opposite axes and twelve whole sign houses',()=>{const c=natalAngles(instant,-6.77,-79.84);assert.equal(dist(c.ascendant,c.descendant),180);assert.ok(Math.abs(dist(c.midheaven,c.imumCoeli)-180)<1e-9);assert.equal(c.houseCusps.length,12);assert.equal(wholeSignHouse(c.ascendant,c.ascendant),1);assert.equal(wholeSignHouse(c.descendant,c.ascendant),7);assert.equal(wholeSignHouse(0,350),2)});
+test('invalid coordinates and poles are not guessed',()=>{assert.equal(validCoordinates(undefined,0),false);assert.throws(()=>natalAngles(instant,91,0));assert.equal(natalAngles(instant,90,0),null)});
+test('match includes natal charts when both locations are supplied',()=>{const a={date:'1995-01-01',time:'12:00',unknownTime:false,place:'Lima, Peru',zone:'America/Lima',latitude:-12.05,longitude:-77.04};const b={...a,place:'Chiclayo, Peru',latitude:-6.77,longitude:-79.84};const m=matchPreview(a,b,'2008-01-01');assert.equal(m.status,'ok');assert.ok(m.charts.every(c=>c.angles&&c.houses.Sun));assert.equal(m.charts[0].longitudes.Sun,m.charts[1].longitudes.Sun);assert.ok(dist(m.charts[0].angles.ascendant,m.charts[1].angles.ascendant)>0.01)});
