@@ -56,6 +56,10 @@ try {
     await picker.getByLabel('País de nacimiento').selectOption('PE');
     await picker.getByLabel('Ciudad, distrito o pueblo').fill('Zzqxw');
     await picker.getByText('No encontramos ese lugar', {exact: false}).waitFor();
+    // Lima (capital) must be found from the catalog with GeoNames coordinates (CTO block 3 gate).
+    const lima = await pickPlace(page, 'a', 'Perú', 'Lima', /^Lima\b/i);
+    assert.equal(lima.zone, 'America/Lima');
+    assert.ok(lima.lat > -12.2 && lima.lat < -11.9 && lima.lon > -77.2 && lima.lon < -76.9, `Lima ${lima.lat},${lima.lon}`);
     const a = await pickPlace(page, 'a', 'Perú', 'Chiclayo', /Chiclayo.*Lambayeque/i);
     assert.equal(a.zone, 'America/Lima');
     assert.ok(a.lat > -6.9 && a.lat < -6.6 && a.lon > -80 && a.lon < -79.7, `Chiclayo ${a.lat},${a.lon}`);
