@@ -226,3 +226,10 @@ test('block 3: no claims of attraction, reciprocity, trust or real feelings asse
   const ASSERT = /\bhay magnetismo|there is magnetism|tienen puntos de encuentro reales|real meeting points|^(Confianza|Trust) |^(Un afecto|Affection) que se siente/im;
   for (const lang of ['es', 'en']) for (const s of sample({lang, premium: true})) {const t = allText(s) + '\n' + [...s.couple.intense].flatMap(c => [c.story, c.benefit, c.care]).join('\n'); assert.ok(!ASSERT.test(t), t.split('\n').find(l => ASSERT.test(l)));}
 });
+test('block 4: friendship readings never carry romantic vocabulary, for any Venus sign (both languages)', () => {
+  for (let m = 1; m <= 12; m++) for (const lang of ['es', 'en']) {
+    const date = `1991-${String(m).padStart(2, '0')}-15`;
+    const t = allText(run({...A, date}, B, {lang, relationship: 'friendship', premium: true}));
+    assert.ok(!ROMANTIC_WORDS.test(t), `${date}/${lang}: ${t.split('\n').find(l => ROMANTIC_WORDS.test(l))}`);
+  }
+});
