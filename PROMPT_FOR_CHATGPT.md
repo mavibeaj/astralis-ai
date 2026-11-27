@@ -64,7 +64,7 @@ The text says "least represented in the available chart". Ties and coverage are 
 ## 4. FOUNDER_BETA_READY gates (`FOUNDER_BETA_READINESS.md`)
 | Gate | Status |
 |---|---|
-| 1 Geography | PENDING live evidence |
+| 1 Geography | PASS on live preview a42a12a1 (f7b0885): world catalog and full journey. Head-commit preview queued |
 | 2 Astronomy | PASS (internal reference) |
 | 3 Individual reading | PASS, pending editorial score |
 | 4 Joint reading | PASS, pending editorial score |
@@ -76,9 +76,9 @@ The text says "least represented in the available chart". Ties and coverage are 
 
 ## 5. Decisions for you
 1. **0.2 polarity symmetry** (T-21): accept a typical 55–60 range, or symmetrise polarities so a neutral corpus centres on 50? Also: a separate friendship weighting (without attraction).
-2. **LLM scope:** rewrite only the joint chapters (3–8), use a cheaper model class, or keep deterministic text for premium? The full rewrite estimate has no margin under USD 0.10.
+2. **LLM scope:** rewrite only the joint chapters (3–8), use a cheaper model class, or keep deterministic text for premium? The full rewrite estimate is about USD 0.10 and exceeds it for some pairs (0.1016 on the current fixture). The test is marked `todo`.
 3. **Orb breadth:** in the corpus every pair has 16–44 cross contacts (the fewest of 300 random pairs was 21). This produces many cards and is the main reason "little evidence" never occurs. Keep the current orbs, or tighten cross-chart orbs?
-4. Free length: 5 of 10 cases run 1,600–1,713 words. Accept, or cap?
+4. Free length: 4 of 10 cases run 1,600–1,713 words. Accept, or cap?
 
 ## 6. Your tasks (by priority)
 - **T-20 (P1) Rubric scoring:** score each of the 10 cases in `EDITORIAL_CASES.md` from 1 to 5 on depth, specificity, variety, coherence, usefulness, naturalness, safety and traceability. Give the average per criterion. List critical deficiencies, with concrete replacement texts and file references.
@@ -104,7 +104,8 @@ The text says "least represented in the available chart". Ties and coverage are 
 
 ## 9. Dependencies and acceptance
 - T-22 depends on T-10. Gate 5 closes when the T-20 average is ≥ 4/5 with no critical deficiency, measured after the T-22 changes.
-- Gate 1 closes with a green `Preview verify` on a PR #9 commit.
+- Gate 1: live catalog and journey verified on preview a42a12a1. Remaining: green `preview` job on PR #9's head commit.
+- Privacy: fixture A used a real person's birth date. It has been replaced in all files. Git history still contains it. Ask the founder whether to rewrite history (force-push) or accept it.
 - Then Claude creates `FOUNDER_BETA_READY.md` and notifies the founder.
 
 ## 10. When you finish

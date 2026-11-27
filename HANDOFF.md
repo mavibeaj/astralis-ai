@@ -19,7 +19,7 @@
 2. Redeploy, and look for this line in the build log: `✓ Geography gate: 248 countries …`
 3. If the build fails on time or memory (world import: about 12 min and 2.2 GB on GitHub runners), see NEXT_TASKS item 4.
 
-The live site has **not** been verified by any agent. Do not mark the P0 as resolved until the live URL shows the countries list and returns Chiclayo.
+Live geography was verified by CI on 27 Nov 2026 on Cloudflare preview https://a42a12a1.astralis-ai.pages.dev (commit f7b0885): 248 countries, PE shards, and a Playwright journey that returns Chiclayo. This preview is not production. Production follows the branch Cloudflare is configured to deploy.
 
 ## Review requests for the CTO
 - symbolic-0.2 internal weights (see the open questions in COMPATIBILITY_METHODOLOGY.md).

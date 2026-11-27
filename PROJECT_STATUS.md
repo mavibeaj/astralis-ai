@@ -15,7 +15,7 @@ Integration branch: `feature/cosmic-match-foundation` @ 85e9d3e (PR #2 merged). 
 | Module | Status | Evidence |
 |---|---|---|
 | Geography (GeoNames) | World catalog: 248 countries, 5.66 M places, 5,995 shards, max 204 KB gzip; deploy build fails without real data | PR #3, QA_REPORT |
-| Live Cloudflare site | **Not verified** (no access). Owner must confirm build command `npm run build`, output `out` | DEPLOYMENT.md |
+| Live Cloudflare site | **Verified by CI** on preview a42a12a1 (commit f7b0885): world catalog (248 countries, 5.66 M places) and full journey. Head-commit preview queued | QA_REPORT.md |
 | Local time → UTC | 1900+, pre-1970 flagged | validated vs zoneinfo |
 | Planets, ASC/MC, Placidus, mean node | Validated vs Swiss Ephemeris (≤17.5″ planets, ≤0.1″ angles/cusps) | tests/ephemeris-reference, houses |
 | Chiron, true node, topocentric | Not implemented | TD-05 |
@@ -27,4 +27,4 @@ Integration branch: `feature/cosmic-match-foundation` @ 85e9d3e (PR #2 merged). 
 | Supabase / RLS | Draft SQL only, not executed | database/schema-draft.sql |
 | Virality (Block 7), Supabase (Block 8) | Not started (only pre-existing share cards) | — |
 
-**Milestone FOUNDER_BETA_READY:** NOT READY. Gates 1 (live preview evidence) and 5 (rubric scoring) are open. See FOUNDER_BETA_READINESS.md.
+**Milestone FOUNDER_BETA_READY:** NOT READY. Gate 5 (rubric scoring) is open. Gate 1 passes on a live preview, and the head-commit preview is pending. See FOUNDER_BETA_READINESS.md.

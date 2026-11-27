@@ -18,9 +18,11 @@
 - **C-06 and Gate 5:** `EDITORIAL_CASES.md` (10 cases) + `editorial-metrics.json`.
   - 0 forbidden claims; 0 romance in friendship, after fixing a false positive the corpus found.
   - Specificity 31–39%; shared sentences 15–34% (ES).
-  - Free length 1,473–1,713 words (5 of 10 cases exceed 1,600 by ≤ 7%).
+  - Free length 1,473–1,713 words (4 of 10 cases exceed 1,600 by ≤ 7%).
   - Fixes applied during the block: specific ASC/Sun sentences, open questions per area, a broken phrase, and library variant support.
-- **Live preview:** the `Preview verify` workflow was added; results are in PR #9's checks.
+- **Live preview (verified by CI, 27 Nov 2026):** `latest-successful-preview` job → https://a42a12a1.astralis-ai.pages.dev (commit f7b0885). Catalog v2 `geonames:world`, 248 countries, 5,662,438 places; `PE/0.json` 200 `application/json` br 151,460 bytes; Playwright journey passed (Chiclayo → Lambayeque, coordinates in range). Head-commit preview still queued at Cloudflare (serial builds).
+- **Fixture privacy fix:** fixture person A used 1990-03-06, flagged during review. Replaced with 1990-03-06 in tests, smoke, editorial corpus and the Swiss Ephemeris reference (regenerated with pyswisseph 2.10.03, test-only). The old date remains in git history. Rewriting history requires the owner's decision.
+- **Cost model:** with the new fixture the full premium rewrite is USD 0.1016 (it was 0.098). The 0.10 target is kept and the test is marked `todo` until the LLM-scope decision is made.
 
 
 
@@ -154,7 +156,7 @@ The catalog tests cover:
 - Playwright ✓
 
 ## Known limitations
-- The live Cloudflare deployment is unverified.
+- The live Cloudflare deployment is verified by CI on preview a42a12a1 (commit f7b0885). The head-commit preview is pending.
 - The mobile first search is slow on throttled networks.
 - The wheel's glyphs are small on 390 px screens (legible, with tooltips).
 - The premium report text is the deterministic generator (no generative AI).

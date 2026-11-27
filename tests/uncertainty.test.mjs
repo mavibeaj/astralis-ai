@@ -9,8 +9,8 @@ test('local day window: normal, DST spring (23 h), DST fall (25 h), historical P
   assert.equal(localDayWindow('2021-03-14', 'America/New_York').hours, 23);
   assert.equal(localDayWindow('2021-11-07', 'America/New_York').hours, 25);
   const lima = localDayWindow('1990-03-06', 'America/Lima');
-  assert.equal(new Date(lima.startMs).toISOString(), '1990-03-06T05:00:00.000Z');
-  assert.equal(new Date(lima.endMs).toISOString(), '1993-03-04T04:59:59.000Z');
+  assert.equal(new Date(lima.startMs).toISOString(), '1990-03-06T04:00:00.000Z'); // Peru observed UTC-4 in summer 1989-90 (tzdb)
+  assert.equal(new Date(lima.endMs).toISOString(), '1990-03-07T03:59:59.000Z');
   const peruDst = localDayWindow('1987-02-15', 'America/Lima'); // Peru observed UTC-4 that summer
   assert.equal(new Date(peruDst.startMs).toISOString(), '1987-02-15T04:00:00.000Z');
 });
