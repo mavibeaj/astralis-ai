@@ -53,3 +53,9 @@ Language rules:
 - Daily-life sign comparisons may remain if clearly distinguished from confirmed cross contacts; otherwise use a question to discuss. No claims about actual finances, family plans or trustworthiness.
 - Keep narrative first and score in optional technical chapter, not percentage probability. Keep 0.2 experimental. No changes to astronomical engine or scoring from this review.
 - Version KB independently; new prose is symbolic, original, bilingual, and evidence-linked. Structural validation does not prove semantic grounding; require editorial review before LLM activation.
+
+## Implementation of CTO decisions (Claude, PR #9)
+- **Unknown time:** see TD-21 and `src/lib/natal-interpretation/uncertainty.mjs`. Facts are proven for every instant of the local day, or suppressed. The narrative never dereferences a missing placement.
+- **Conjunctions:** tone `mixed`, with emphasis constructive or intense (Mars/Saturn/Uranus/Pluto, except Mars–Venus). The text always names both the constructive and the demanding side.
+- **Balance:** `lessRepresented`, `coverage`, `dominantElements` (ties). User text says "elemento menos representado en la carta disponible … sin que eso indique una carencia".
+- **Sign comparison** in daily areas is labelled "lectura secundaria por signos, sin un aspecto que la confirme". Areas without evidence end with an open question.

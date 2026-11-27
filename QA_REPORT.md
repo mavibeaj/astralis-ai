@@ -1,4 +1,28 @@
-# QA report (updated 2026-11-27)
+# QA report (updated 2026-11-27, block 2: PR #9)
+
+## Beta readiness block (PR #9)
+- **Tests:** typecheck ✓; `npm test` 227 tests, 220 pass, 0 fail, 7 skipped (they need the full GeoNames catalog and pass in CI). Build ✓; Playwright desktop + mobile ✓.
+- **C-01 unknown time** (`tests/uncertainty.test.mjs`):
+  - DST-aware local-day windows checked: 24 h, 23 h and 25 h (New York 2021), and Peru 1987 at UTC−4.
+  - Speed bounds checked against 2 years of real motion; no body exceeded its bound.
+  - 365 days × 5 bodies compared with a 5-minute brute-force scan: **0 false "stable" results** across ≥ 30 sign changes.
+  - Unknown-time placements are sign-level only (no degree, no house), and the node is checked monotonically.
+- **C-02:** conjunctions are always `mixed`, never tense cards; mixed cross cards carry a care note.
+- **C-03:** "least represented in the available chart"; ties and coverage reported; no deficit wording (tested).
+- **C-04:** `CALIBRATION_REPORT.md`, 400 seeded pairs.
+  - 0.1: σ 2.9, with 14.5% of results exactly 50.
+  - 0.2 (time known): mean 57.5 ± 6.9, an upward bias from asymmetric polarities.
+  - ±1 h changes 0.2 by ≥ 5 points in 11.5% of pairs.
+  - 6.9% of dimensions have no evidence and are now labelled `insufficient-evidence`.
+- **C-05:** grounding validator rejects a wrong sign, body, aspect or tone, certainty and prediction, even with valid citations (6 tests). Mock model passes end to end. Full premium rewrite estimate: 1,342 input / 6,281 output tokens ≈ **USD 0.098** at placeholder prices, under the USD 0.10 target with no margin.
+- **C-06 and Gate 5:** `EDITORIAL_CASES.md` (10 cases) + `editorial-metrics.json`.
+  - 0 forbidden claims; 0 romance in friendship, after fixing a false positive the corpus found.
+  - Specificity 31–39%; shared sentences 15–34% (ES).
+  - Free length 1,473–1,713 words (5 of 10 cases exceed 1,600 by ≤ 7%).
+  - Fixes applied during the block: specific ASC/Sun sentences, open questions per area, a broken phrase, and library variant support.
+- **Live preview:** the `Preview verify` workflow was added; results are in PR #9's checks.
+
+
 
 ## Cosmic Story v2 (PR #8)
 - `npm test`: 211 tests, 204 pass, 0 fail, 7 skipped. The skips need the full GeoNames catalog and pass in CI.

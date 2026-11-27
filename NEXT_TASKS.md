@@ -1,5 +1,7 @@
 # Next tasks (prioritized)
 
+0. **FOUNDER_BETA_READY (T-17):** close Gate 1 (first green `Preview verify`) and Gate 5 (ChatGPT rubric ≥ 4/5, T-20; library variants, T-22). Do not invite the founder before then.
+
 1. **Owner:** in Cloudflare Pages, confirm build command `npm run build` (or `build:world`), output `out`, no `GEOGRAPHY_COUNTRIES`; redeploy and check the "Geography gate" line in the build log. Then retest Chiclayo + a rural locality on the live URL (agents had no access to the live site).
 2. **ChatGPT:** review and merge #3 → #4 → #5 → #6 → #7 → #8 (retarget each to the integration branch after its base merges).
 2b. **ChatGPT:** T-09 to T-13 in AGENT_TASK_BOARD.md (methodology review, knowledge-base expansion, editorial rubric, research, SEO).

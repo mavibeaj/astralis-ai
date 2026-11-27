@@ -20,3 +20,10 @@
 - **TD-18 No padding:** affinities and differences come only from real cross aspects; daily-life areas without evidence are labelled as topics to discuss.
 - **TD-19 Scores de-emphasised:** symbolic-0.1 and 0.2 are unchanged and moved to the technical chapter; the narrative never shows scores.
 - **TD-20 Premium story stored client-side** with the simulated order (localStorage) so recovery works offline. Server storage (Supabase) must apply data minimisation before launch.
+- **TD-21 Unknown time is proven, not sampled (C-01):** DST-aware local-day window and conservative speed bounds (Moon 15.6, Mercury 2.3, Venus 1.35, Sun 1.05, Mars 0.85 °/day). Bisection runs to 60 s. Unproven facts are dropped. Only signs are reported for unknown times.
+- **TD-22 Conjunctions are 'mixed' (C-02):** emphasis is constructive or intense; they never generate a tension card.
+- **TD-23 Element balance (C-03):** coverage and ties are reported; the Sun's element breaks ties; there is no dominant element without evidence.
+- **TD-24 0.2 parameters are exposed as hypotheses (C-04):** defaults are unchanged. Dimensions report `status` and `evidenceCount`; 50 is a mathematical midpoint.
+- **TD-25 Semantic grounding (C-05):** the validator applies lexicon checks on signs, bodies, aspects, tone, certainty and prediction against the cited evidence. These are necessary, not sufficient; editorial review is still required before any LLM is activated.
+- **TD-26 Library variants:** any knowledge-base text field may be an array; the variant is chosen deterministically from the evidence id.
+- **TD-27 Preview verification:** every PR commit's Cloudflare preview is tested by GitHub Actions (no manual step needed for Gate 1 evidence).

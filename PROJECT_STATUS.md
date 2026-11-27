@@ -9,7 +9,8 @@ Integration branch: `feature/cosmic-match-foundation` @ 85e9d3e (PR #2 merged). 
 | #5 | `claude/product-experience` | claude/geo-p0-fix (+ merges #4) | Block 5 redesign + SVG wheels | ✓ |
 | #6 | `claude/checkout-sim` | claude/product-experience | Block 9 checkout simulation | ✓ |
 | #7 | `chatgpt/story-first` (ChatGPT) | claude/checkout-sim | Story-first results v1 | ✓ |
-| #8 | `claude/cosmic-story-v2` | chatgpt/story-first | Natal engine + 8-chapter Cosmic Story + chaptered premium report | see PR |
+| #8 | `claude/cosmic-story-v2` | chatgpt/story-first | Natal engine + 8-chapter Cosmic Story + chaptered premium report | ✓ |
+| #9 | `claude/beta-readiness` (includes `chatgpt/kb-expansion` decisions) | claude/cosmic-story-v2 | CTO changes C-01–C-06, calibration, editorial corpus, live preview verification, beta gates | see PR |
 
 | Module | Status | Evidence |
 |---|---|---|
@@ -25,3 +26,5 @@ Integration branch: `feature/cosmic-match-foundation` @ 85e9d3e (PR #2 merged). 
 | Payments | Disabled. No provider selected | MONETIZATION.md |
 | Supabase / RLS | Draft SQL only, not executed | database/schema-draft.sql |
 | Virality (Block 7), Supabase (Block 8) | Not started (only pre-existing share cards) | — |
+
+**Milestone FOUNDER_BETA_READY:** NOT READY. Gates 1 (live preview evidence) and 5 (rubric scoring) are open. See FOUNDER_BETA_READINESS.md.

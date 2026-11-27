@@ -1,96 +1,111 @@
 # PROMPT FOR CHATGPT (CTO/CPO): copy everything below
 
-You are the CTO/CPO and astrological-methodology owner of Astralis AI (repo `mavibeaj/astralis-ai`, integration branch `feature/cosmic-match-foundation`). Claude is Lead Developer. Work on `chatgpt/*` branches, open independent PRs, and do not push to `claude/*` branches. Do not merge to `main`, create costs, or enable payments.
+You are CTO/CPO and astrological-methodology owner of Astralis AI (repo `mavibeaj/astralis-ai`, integration branch `feature/cosmic-match-foundation`). Claude is Lead Developer. Work on `chatgpt/*` branches with independent PRs, and do not push to `claude/*`. Do not merge to `main`, create costs, or enable payments. Never use real birth data, including the founder's or partner's.
 
-## 1. Current state (2026-11-27)
-The founder's feedback: the calculations are correct, but the product lacked emotional value. Claude has delivered the **Cosmic Story v2** (PR #8): it reads each person first, then the connection, in 8 chapters, with every claim traceable to engine evidence.
+## 1. Progress (2026-11-27, block 2)
+Claude implemented your decisions C-01 to C-06 in **PR #9** `claude/beta-readiness` (base `claude/cosmic-story-v2`). The branch includes your commits 9c6a504 and f7b0885.
 
-**Open PR stack (merge in this order, nothing merged since PR #2):**
-1. #3 `claude/geo-p0-fix` → integration: P0 geography. CI ✓, world import ✓.
-2. #4 `claude/synastry-0.2` → integration: symbolic-0.2 candidate behind a flag. CI ✓.
-3. #5 `claude/product-experience` → base `claude/geo-p0-fix`: redesign and wheels. CI ✓.
-4. #6 `claude/checkout-sim` → base `claude/product-experience`: checkout simulation. CI ✓.
-5. #7 `chatgpt/story-first` (yours) → base `claude/checkout-sim`. CI ✓.
-6. #8 `claude/cosmic-story-v2` → base `chatgpt/story-first`: this delivery.
+Commits:
+- 10a7c51: Cloudflare preview verification.
+- 48ca3c4: C-01/02/03/06 in the engine.
+- (UI) Bridges, complementarity and care notes.
+- da27cf0: C-05 LLM mock, grounding and cost.
+- 95027fd: C-04 calibration.
+- 5f5531e: Gate 5 editorial corpus and fixes.
+- Docs commit.
 
-After each merge, retarget the next PR to `feature/cosmic-match-foundation`.
+### C-01 Unknown time
+- A DST-aware window covers every UTC instant of the local birth day.
+- Sign stability and aspect persistence are **proven** with conservative speed bounds plus bisection to 60 s; anything unproven is suppressed. Placements are sign-level only. The node is checked monotonically.
+- Validation:
+  - Speed bounds checked against 2 years of real motion.
+  - 365 days × 5 bodies compared with a 5-minute brute-force scan: 0 false "stable" results.
+  - DST windows of 23 and 25 h; Peru 1987.
 
-## 2. Implemented in #8 (key commits 5d6d0b9, f604a0a)
-- `src/lib/natal-interpretation/`:
-  - `knowledge.mjs` (natal-kb-0.1)
-  - `evidence.mjs` (Layer A)
-  - `narrative.mjs` (Layer B, cosmic-story-0.1)
-  - `llm-adapter.mjs` (disabled)
-  - `index.mjs`
-- `src/app/components/StoryReading.tsx`: cover + 8 chapters, plus premium (09) and technical (10).
-- `src/lib/commerce.mjs`: the premium report stores the premium story. The HTML/PDF export has a cover, contents and 8 chapters.
-- `src/lib/match-preview.mjs`: Moon samples and day samples for unknown birth times.
-- Methodology: `NATAL_METHODOLOGY.md`. Board: `AGENT_TASK_BOARD.md`.
+### C-02 Conjunctions
+Conjunctions are `mixed` (constructive or intense emphasis) and never become tension cards. Mixed cross cards include a care note.
 
-## 3. Tests executed (real results)
+### C-03 Element balance
+The text says "least represented in the available chart". Ties and coverage are reported, there is no dominant element without evidence, and there is no deficit language.
+
+### C-04 Calibration
+`CALIBRATION_REPORT.md`, `scripts/calibrate-scoring.mjs`, 400 seeded pairs.
+- 0.1 is compressed: σ 2.9, and 14.5% of results are exactly 50.
+- **0.2 has an upward bias:** mean 57.5 ± 6.9 on a neutral corpus. The cause is asymmetric polarities (trine +1, sextile +0.6, conjunction +0.5 vs square −0.7, opposition −0.5).
+- Both times unknown: mean 50.5, coverage 75%.
+- ±1 h moves 0.2 by ≥ 5 points in 11.5% of pairs.
+- 6.9% of dimensions have no contacts. They are now labelled `insufficient-evidence`, and the output discloses that 50 is a mathematical midpoint.
+- Defaults are unchanged; no tuning was done.
+
+### C-05 LLM
+- `llm-mock.mjs`: deterministic mock model, plus `checkGrounding`. It rejects a sign, body, aspect type or tone that does not follow from the cited evidence, and rejects certainty or prediction language, even when the citation is valid. It runs inside `validateStoryResponse`.
+- Cost model (placeholder prices USD 3 / 15 per million tokens): a full premium rewrite is about 1,342 input and 6,281 output tokens, **≈ USD 0.098**. That is under the USD 0.10 target with no margin.
+
+### C-06 Narrative
+- Gate 3: new "Contrastes internos" section, making 12 sections per person.
+- Chapter bridges.
+- Gate 4: "Cómo se complementan" block and "Química simbólica".
+- Generic cross cards now name both signs and everyday contexts.
+- Areas without evidence end with a **specific open question**.
+- Library fields accept **variant arrays**, chosen deterministically.
+
+### Gate 5 corpus
+`EDITORIAL_CASES.md` contains 10 fictional pairs covering every case you required. Metrics are in `editorial-metrics.json`.
+
+## 2. Tests (real results)
 - typecheck ✓.
-- `npm test`: 211 tests, 204 pass, 0 fail, 7 skipped (need the full GeoNames catalog; they pass in CI).
-- Playwright desktop 1280 and mobile 390 on the static export ✓, with screenshots of every chapter.
-- Measured lengths (fictional pair, Spanish): free **1,426** words, premium **3,280**.
-- Foundation CI on #8: see the PR.
+- `npm test`: 227 tests, 220 pass, 0 fail, 7 skipped (they need the full GeoNames catalog; green in CI).
+- Build ✓; Playwright desktop and mobile ✓.
 
-## 4. Errors, blockers and known gaps
-- **BLOCKED (founder):** the live Cloudflare site is not verified. The build command must be `npm run build`, with output `out`. Until then the P0 is not closed.
-- **Quality gap:** cross pairs without a library reading fall back to generic text (e.g. Sun–Mars: "La identidad y el impulso…"). This is the main content task for you.
-- The 0.1/0.2 scores are unchanged and live only in chapter 10.
-- PR #7's `relationship-story.mjs` is no longer used by the page.
+## 3. Blockers
+- **Gate 1:** the new `Preview verify` workflow waits for the Cloudflare preview of each PR commit, then tests the live URL (world catalog and full journey). At the time of writing, Cloudflare had been building PR #9's first commit for more than 15 minutes. See PR #9's checks for the result. If Cloudflare times out on the world import (about 12 min on GitHub runners), the fallback is to build the catalog in Actions and deploy with `wrangler`. That needs an API token from the founder.
+- **Gate 5:** needs **your rubric scores**. Claude did not self-certify.
 
-## 5. Decisions you need to review (written answers in the files named)
-1. `NATAL_METHODOLOGY.md`:
-   - Orbs (luminaries 8/7/5, personal 7/6/4, social and angles 6/5/3, outer 5/4/3).
-   - Hard conjunctions (Mars, Saturn, Uranus, Pluto).
-   - Exclusion of outer–outer aspects.
-   - Element weights (3/3/3/2/2/2/1/1/1) and the "lacking" threshold.
-2. Unknown-time policy: keep the Moon only if its sign is stable all day; drop planets that change sign; aspects must hold at 00:00 and 23:59.
-3. Daily-life fallback: sign comparison by element, labelled "not confirmed by an aspect". Keep it, or show only "topic to discuss"?
-4. symbolic-0.2 weights (`COMPATIBILITY_METHODOLOGY.md`, open questions). Still pending from before.
-5. Whether the free reading should show the score at all, or only the narrative (currently the score is in chapter 10).
+## 4. FOUNDER_BETA_READY gates (`FOUNDER_BETA_READINESS.md`)
+| Gate | Status |
+|---|---|
+| 1 Geography | PENDING live evidence |
+| 2 Astronomy | PASS (internal reference) |
+| 3 Individual reading | PASS, pending editorial score |
+| 4 Joint reading | PASS, pending editorial score |
+| 5 Editorial | **NOT PASSED** (rubric pending) |
+| 6 UX | PASS |
+| 7 Stability and privacy | PASS except the preview link |
 
-## 6. Architecture proposals from Claude
-- Keep the knowledge base as versioned data (`natal-kb-x.y`). Any text change is a version bump, guarded by the same tests.
-- The LLM layer only rewrites the Layer A evidence. The validator already rejects uncited, forbidden or score-bearing paragraphs. Next step: a mock prototype with a cost model, still no provider.
-- Later, move the knowledge base to JSON files per locale, so editors can work without touching code.
+**Recommendation:** do NOT start the founder's personal test yet. The comparison protocol is ready in `FOUNDER_BETA_PROTOCOL.md`.
 
-## 7. Tasks assigned to you (by priority)
-- **T-09 (P1):** review and approve or adjust NATAL_METHODOLOGY.md rules. Record decisions with reasons.
-- **T-10 (P1) KB expansion** on `chatgpt/kb-expansion`:
-  - Add ≥ 15 cross pairs in the same shape as `CROSS_PAIRS`: title[easy, hard]; easy {story, daily, benefit, tip}; hard {story, daily, misunderstanding, needX, needY, action}; `x` body; ES+EN.
-  - Priority pairs: Sun–Mars, Mercury–Venus, Venus–Neptune, Moon–Pluto, Sun–Uranus, Moon–Mars, Mercury–Mars, Venus–Pluto, Sun–Neptune, Moon–Neptune, Mercury–Saturn, Mars–Saturn, Node–Sun/Moon/Venus, MC–Sun/Saturn.
-  - Add ≥ 10 natal pairs, and sign-in-house paragraphs for premium.
-  - Constraints: gender-neutral Spanish (adjectives on feminine nouns, no "querido/a"), English with singular "they", no forbidden claims.
-  - Run `npm test`.
-- **T-11 (P1):** editorial rubric (depth, specificity, variety, safety, usefulness, coherence; 1–5 each) and 10 evaluation cases (fictional births incl. unknown time and friendship). Score the current output from PR #8 and list concrete text changes.
-- **T-12 (P2):**
-  - Competitor and pricing study (5–8 products: features, price, free vs paid depth).
-  - International payment providers for a Peru-resident founder (fees, payouts to Peru, astrology/entertainment category acceptance, Merchant of Record vs not, refunds and chargebacks). Include sources.
-  - A recommendation; open no accounts.
-- **T-13 (P3):** bilingual SEO and launch plan (keyword map, page titles, Open Graph, `noindex` until launch, acquisition channels, path to the USD 1,000/month goal as an objective, not a promise).
-- **PR reviews:** #3 → #8 in order. For each, approve or request changes with concrete file and line comments.
+## 5. Decisions for you
+1. **0.2 polarity symmetry** (T-21): accept a typical 55–60 range, or symmetrise polarities so a neutral corpus centres on 50? Also: a separate friendship weighting (without attraction).
+2. **LLM scope:** rewrite only the joint chapters (3–8), use a cheaper model class, or keep deterministic text for premium? The full rewrite estimate has no margin under USD 0.10.
+3. **Orb breadth:** in the corpus every pair has 16–44 cross contacts (the fewest of 300 random pairs was 21). This produces many cards and is the main reason "little evidence" never occurs. Keep the current orbs, or tighten cross-chart orbs?
+4. Free length: 5 of 10 cases run 1,600–1,713 words. Accept, or cap?
 
-## 8. Files to read
-`HANDOFF.md`, `PROJECT_STATUS.md`, `QA_REPORT.md`, `AGENT_TASK_BOARD.md`, `NATAL_METHODOLOGY.md`, `COMPATIBILITY_METHODOLOGY.md`, `MONETIZATION.md`, `src/lib/natal-interpretation/knowledge.mjs`, `src/lib/natal-interpretation/narrative.mjs`, `tests/natal-interpretation.test.mjs`.
+## 6. Your tasks (by priority)
+- **T-20 (P1) Rubric scoring:** score each of the 10 cases in `EDITORIAL_CASES.md` from 1 to 5 on depth, specificity, variety, coherence, usefulness, naturalness, safety and traceability. Give the average per criterion. List critical deficiencies, with concrete replacement texts and file references.
+- **T-10 / T-22 (P1) Knowledge-base expansion** on `chatgpt/kb-expansion`, editing only `src/lib/natal-interpretation/knowledge.mjs`:
+  - ≥ 15 new cross pairs in the `CROSS_PAIRS` shape (`x` body; title [easy, hard]; easy {story, daily, benefit, tip}; hard {story, daily, misunderstanding, needX, needY, action}; ES + EN). Priority: Sun–Mars, Mercury–Venus, Venus–Neptune, Moon–Pluto, Sun–Uranus, Moon–Mars, Mercury–Mars, Venus–Pluto, Sun–Neptune, Moon–Neptune, Mercury–Saturn, Mars–Saturn, Node–Sun/Moon/Venus, MC–Sun/Saturn.
+  - **Variant arrays** (2–3 per field) for the most repeated pairs: Moon|Venus, Mars|Mars, Jupiter|Sun, Moon|Sun, Mars|Venus. Also variants for sign `need`, `shadow` and `love`.
+  - Rules: gender-neutral Spanish (no "querido/a"; adjectives on feminine nouns); English singular "they". Avoid the friendship-forbidden words in non-romantic texts: deseo, atracción, intimidad, romance (the corpus found "deseo de celebrar" in Leo).
+  - Run `npm test` and `node scripts/editorial-corpus.mjs`. Target: shared-sentence metric < 15%.
+- **T-21 (P2):** the decisions in section 5, written into `COMPATIBILITY_METHODOLOGY.md` with dates.
+- **T-12 / T-13 (P2/P3):** competitor and pricing research; payment providers for a Peru-resident founder; SEO and launch plan. All with sources; no accounts opened.
+- **PR reviews:** #3 → #9 in order. Merging the stack into the integration branch is now the main risk reducer (nothing merged since #2).
 
-## 9. What Claude will do next (after your review)
-- Apply your methodology decisions.
-- T-14: a mock LLM narrative prototype behind the adapter, with a cost model (no provider).
-- T-15: geography mobile performance, once the live site exists.
-- T-16: Supabase RLS tests on a local stack.
-- Visual polish of chapters 4–6.
+## 7. Files to read
+`FOUNDER_BETA_READINESS.md`, `FOUNDER_BETA_PROTOCOL.md`, `EDITORIAL_CASES.md`, `editorial-metrics.json`, `CALIBRATION_REPORT.md`, `NATAL_METHODOLOGY.md` (implementation notes), `QA_REPORT.md`, `AGENT_TASK_BOARD.md`, `src/lib/natal-interpretation/{knowledge,narrative,evidence,uncertainty,llm-mock}.mjs`.
 
-## 10. Dependencies
-- T-10 and T-11 depend on T-09.
-- Claude's T-14 depends on T-09 and T-11.
-- The live validation (T-02) depends on #3 merging and the founder's Cloudflare settings.
+## 8. What Claude continues next
+- Act on the `Preview verify` result (Gate 1).
+- Apply your rubric fixes, then regenerate the corpus.
+- Implement your T-21 decision behind the flag.
+- Geography mobile performance on the live preview.
+- Local Supabase RLS tests.
+- Premium report polish.
 
-## 11. Acceptance criteria for your deliverables
-- Knowledge-base PRs keep `npm test` green and add no forbidden claims. Every new cross pair has both tones in both languages.
-- Decisions are written into the methodology files with a date and rationale.
-- Research includes sources and dates; nothing is presented as a guarantee.
+## 9. Dependencies and acceptance
+- T-22 depends on T-10. Gate 5 closes when the T-20 average is ≥ 4/5 with no critical deficiency, measured after the T-22 changes.
+- Gate 1 closes with a green `Preview verify` on a PR #9 commit.
+- Then Claude creates `FOUNDER_BETA_READY.md` and notifies the founder.
 
-## 12. When you finish
-Create or update **`PROMPT_FOR_CLAUDE.md`** on your branch with the decisions you approved, the changes you require (file and acceptance criteria), the next tasks, and any questions for Claude. Update `AGENT_TASK_BOARD.md` statuses.
+## 10. When you finish
+Update `AGENT_TASK_BOARD.md`, and write **`PROMPT_FOR_CLAUDE.md`** with your decisions, required changes (file and acceptance criteria), rubric results, and questions.

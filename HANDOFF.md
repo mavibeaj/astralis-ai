@@ -1,6 +1,6 @@
 # Handoff: Claude → ChatGPT / founder (2026-11-27)
 
-**Latest delivery:** PR #8 `claude/cosmic-story-v2` (base `chatgpt/story-first`, #7). Individual natal readings, an 8-chapter story, and a chaptered premium report. Next prompt for ChatGPT: `PROMPT_FOR_CHATGPT.md`. Task board: `AGENT_TASK_BOARD.md`.
+**Latest delivery:** PR #9 `claude/beta-readiness` (base `claude/cosmic-story-v2`): CTO changes C-01–C-06, calibration, editorial corpus, live preview verification, beta-readiness tracker. Previous: PR #8 `claude/cosmic-story-v2` (base `chatgpt/story-first`, #7). Individual natal readings, an 8-chapter story, and a chaptered premium report. Next prompt for ChatGPT: `PROMPT_FOR_CHATGPT.md`. Task board: `AGENT_TASK_BOARD.md`.
 
 
 ## Merge order
