@@ -54,7 +54,7 @@ export function pointsOf({chart, unknownTime = false}) {
   return pts;
 }
 
-function aspect(pa, pb, x, y) {
+function aspect(pa, pb, x, y, P) {
   const cls = [CLASS[pa], CLASS[pb]].sort((a, b) => RANK.indexOf(b) - RANK.indexOf(a))[0];
   const nodePair = pa === 'NorthNode' || pb === 'NorthNode';
   const orbs = nodePair ? ORBS.node : ORBS[cls];
@@ -68,8 +68,8 @@ function aspect(pa, pb, x, y) {
   }
   if (!best) return null;
   let polarity = BASE[best.name];
-  if (best.name === 'conjunction' && (HARD_CONJ.has(pa) || HARD_CONJ.has(pb))) polarity = -0.3;
-  if (nodePair) polarity = Math.abs(polarity); // nodal contacts read as growth themes
+  if (best.name === 'conjunction' && (HARD_CONJ.has(pa) || HARD_CONJ.has(pb))) polarity = P.hardConjunctionPolarity;
+  if (nodePair) polarity = best.name === 'opposition' && !P.nodeOppositionPositive ? 0 : Math.abs(polarity); // nodal contacts read as growth themes
   const tightness = Math.cos((Math.PI / 2) * (best.deviation / best.orb));
   return {...best, distance, polarity, tightness};
 }
@@ -78,7 +78,10 @@ function aspect(pa, pb, x, y) {
  * @param a {chart, unknownTime}
  * @param b {chart, unknownTime}
  */
-export function compatibilityV02(a, b) {
+// Parameters are experimental hypotheses (CTO C-04). Defaults reproduce the frozen candidate.
+export const DEFAULT_PARAMS = Object.freeze({saturation: 1.6, hardConjunctionPolarity: -0.3, nodeOppositionPositive: true});
+export function compatibilityV02(a, b, params = {}) {
+  const P = {...DEFAULT_PARAMS, ...params};
   const A = pointsOf(a), B = pointsOf(b);
   const dims = Object.fromEntries(Object.keys(WEIGHTS).map(k => [k, {sum: 0, evidence: [], possible: 0, available: 0}]));
   const seen = new Set();
@@ -93,7 +96,7 @@ export function compatibilityV02(a, b) {
       dims[dim].possible++;
       if (!(pa in A) || !(pb in B)) continue;
       dims[dim].available++;
-      const asp = aspect(pa, pb, A[pa], B[pb]);
+      const asp = aspect(pa, pb, A[pa], B[pb], P);
       if (!asp) continue;
       const contribution = asp.polarity * asp.tightness * weight;
       dims[dim].sum += contribution;
@@ -122,9 +125,11 @@ export function compatibilityV02(a, b) {
   let weighted = 0, avail = 0;
   for (const [k, d] of Object.entries(dims)) {
     const hasData = d.available > 0;
-    const score = hasData ? Math.round(50 + 50 * Math.tanh(d.sum / SATURATION)) : null;
+    const score = hasData ? Math.round(50 + 50 * Math.tanh(d.sum / P.saturation)) : null;
+    // CTO: no evidence is 'insufficient evidence', not neutral compatibility (50 is only the mathematical midpoint).
+    const status = !hasData ? 'no-data' : d.evidence.length === 0 ? 'insufficient-evidence' : 'evidence';
     d.evidence.sort((x, y) => Math.abs(y.contribution) - Math.abs(x.contribution) || JSON.stringify(x).localeCompare(JSON.stringify(y)));
-    dimensions[k] = {score, coverage: d.possible ? r3(d.available / d.possible) : 0, rawSum: r3(d.sum),
+    dimensions[k] = {score, status, evidenceCount: d.evidence.length, coverage: d.possible ? r3(d.available / d.possible) : 0, rawSum: r3(d.sum),
       supportive: r3(d.evidence.filter(e => e.contribution > 0).reduce((s, e) => s + e.contribution, 0)),
       challenging: r3(d.evidence.filter(e => e.contribution < 0).reduce((s, e) => s + e.contribution, 0)),
       evidence: d.evidence};
@@ -133,5 +138,5 @@ export function compatibilityV02(a, b) {
   return {version: VERSION, experimental: true, index: avail ? Math.round(weighted / avail) : null, weightCoverage: avail / 100,
     dimensions, overlays, houseSystem: 'whole-sign',
     dataCoverage: {timeKnown: [!a.unknownTime, !b.unknownTime], angles: ['Ascendant' in A, 'Ascendant' in B], points: [Object.keys(A).length, Object.keys(B).length]},
-    disclaimer: 'Symbolic interpretation index (experimental candidate methodology). Not a probability, prediction or scientific assessment.'};
+    disclaimer: 'Symbolic interpretation index (experimental candidate methodology). Not a probability, prediction or scientific assessment. 50 is the mathematical midpoint, not neutral compatibility; dimensions without contacts are marked insufficient evidence.', params: P};
 }
