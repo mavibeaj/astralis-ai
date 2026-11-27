@@ -1,6 +1,6 @@
 # Agent task board
 
-Status: TODO · IN_PROGRESS · BLOCKED · REVIEW · DONE. Updated 2026-11-27 (block 3) by Claude.
+Status: TODO · IN_PROGRESS · BLOCKED · REVIEW · DONE. Updated 2026-11-27 (block 4) by Claude. After the history cleanup all SHAs changed (INTEGRATION_PLAN.md).
 
 | ID | Task | Owner | Status | Priority | Depends on | Acceptance criteria | Evidence | Branch | PR |
 |---|---|---|---|---|---|---|---|---|---|
@@ -20,17 +20,22 @@ Status: TODO · IN_PROGRESS · BLOCKED · REVIEW · DONE. Updated 2026-11-27 (bl
 | T-14 | LLM narrative prototype behind the adapter (mock only) | Claude | REVIEW (block 3: chapters 3–8 budget, retries, deterministic fallback) | P3 | T-09, T-11 | Validation passes; no network; cost model within USD 0.10 cap incl. retries | tests/llm-grounding (budget test) | claude/block3 | #10 |
 | T-15 | Mobile performance of first geography search | Claude | TODO | P5 | T-02 | Measured on Cloudflare (brotli) | — | claude/* | — |
 | T-16 | Supabase schema/RLS local tests (no paid project) | Claude | TODO | P5 | T-12 | RLS tests against local Supabase | — | claude/* | — |
-| T-17 | FOUNDER_BETA_READY: all 7 gates passed with evidence | Claude + ChatGPT + Founder | IN_PROGRESS (open: Gate 5 rubric, Gate 7 privacy decision, PR #10 head preview) | P0 | T-20, T-24, T-23 | 7 gates with verifiable evidence on the evaluated commit | FOUNDER_BETA_READINESS.md | claude/block3 | #10 |
+| T-17 | FOUNDER_BETA_READY: all 7 gates passed with evidence | Claude + ChatGPT + Founder | IN_PROGRESS (open: Gate 5 rubric, Gate 7 founder steps, final-commit preview) | P0 | T-20, T-24, T-30 | 7 gates with verifiable evidence on the final integrated commit | FOUNDER_BETA_READINESS.md | claude/block4 | #12 |
 | T-18 | CTO changes C-01–C-06 (unknown time, conjunctions, balance, calibration, LLM mock, narrative) | Claude | REVIEW | P1 | T-09 | tests/uncertainty, natal-interpretation, llm-grounding; CALIBRATION_REPORT.md | QA_REPORT | claude/beta-readiness | #9 |
 | T-19 | Live preview verification of every PR commit | Claude | DONE (PR #9 head d7610ad: catalog + journey green; Lima checked live; Lima added to journey) | P0 | — | `preview` job green on the head commit | QA_REPORT block 3 | claude/beta-readiness | #9 |
-| T-20 | Re-score EDITORIAL_CASES.md (cosmic-story-0.2) with the rubric (8 criteria, 1–5) | ChatGPT | TODO | P0 | T-25 | Average ≥ 4/5, no critical deficiency, per-case notes with concrete text fixes | EDITORIAL_CASES.md, editorial-metrics.json | chatgpt/* | — |
+| T-20 | Full rubric on the regenerated bilingual corpus (20 readings) | ChatGPT | TODO | P0 | T-31 | Average ≥ 4/5, no critical deficiency; per-case notes split narrative (Claude) / library (ChatGPT) | EDITORIAL_CASES.md | chatgpt/* | — |
 | T-21 | Decide the 0.2 parameter set (candidate / sym-a / sym-b / sym-c) | ChatGPT | TODO | P2 | T-26 | Written decision in COMPATIBILITY_METHODOLOGY.md; 0.1 stays frozen | CALIBRATION_BLOCK3.md | chatgpt/* | — |
 | T-22 | Fill library variants (arrays) for the most repeated cross pairs and sign texts | ChatGPT | TODO | P1 | T-10 | Shared-sentence metric < 15% in EDITORIAL_CASES | editorial-metrics.json | chatgpt/kb-expansion | — |
 
-| T-23 | Deploy recovery: geography on its own versioned release (SHA-256 pinned), decoupled from app builds | Claude → Founder | REVIEW (code + tests ready; activation = founder approves the first `geo-*` release) | P0 | — | Cloudflare builds without the GeoNames import; catalog byte-identical | DEPLOYMENT.md, tests/geography-release | claude/block3 | #10 |
-| T-24 | Privacy incident: purge plan for a personal date in history | Founder (decision) → Claude (execution) | BLOCKED (needs written authorization) | P0 | — | Chosen option executed; guard test green with PRIVATE_PATTERNS secret | PRIVACY_INCIDENT.md | — | — |
+| T-23 | Versioned geography catalog (private repo) | Claude → Founder | REVIEW (workflow + authenticated fetch tested; founder publishes release and sets GEOGRAPHY_TOKEN) | P0 | — | Release published, lock committed, Cloudflare builds without GeoNames import | DEPLOYMENT.md | claude/block4 | #12 |
+| T-24 | Privacy incident | Claude (executed) + Founder | IN_PROGRESS (history cleaned, 15 artefacts + 21 logs deleted; pending: visibility, GitHub Support, local copies) | P0 | — | PRIVACY_INCIDENT.md "Still pending" empty | PRIVACY_INCIDENT.md | — | — |
 | T-25 | Editorial fixes in narrative.mjs (cosmic-story-0.2): empty sections, grammar, alias reuse, three groups, hedged claims, length | Claude | REVIEW | P1 | — | CTO block 3 acceptance criteria, tested | tests/natal-interpretation (block 3 tests), EDITORIAL_CASES.md | claude/block3 | #10 |
 | T-26 | symbolic-0.2 versioned parameter sets + calibration on original and independent samples | Claude | REVIEW | P2 | — | Symmetric variant, nodes/overlays/orbs switches, friendship without attraction, no forced mean | CALIBRATION_BLOCK3.md | claude/block3 | #10 |
 | T-27 | Experimental synastry orbs: compare with natal orbs | Claude | REVIEW | P2 | — | Contacts, cards, insufficiency, built readings, ±1 h stability reported | CALIBRATION_BLOCK3.md | claude/block3 | #10 |
-| T-28 | knowledge.mjs fixes found by the corpus (EN shadow grammar, assertive benefits, aliases) | ChatGPT | TODO | P1 | T-25 | Items listed in QA_REPORT block 3 resolved in the library | QA_REPORT.md | chatgpt/* | — |
+| T-28 | knowledge.mjs fixes found by validation | ChatGPT | TODO | P1 | T-25 | Moon–Venus EN and Moon–Saturn ES benefits hedged; Scorpio `love` without "deseo"; sign-level variants (arrays) for the most repeated placements | QA_REPORT block 4 | chatgpt/* | — |
 | T-29 | Accessibility: automated WCAG 2.1 A/AA audit in CI | Claude | DONE (0 violations desktop/mobile) | P3 | — | axe-core serious/critical fail CI | a11y-*.json artefacts | claude/block3 | #10 |
+| T-30 | Integrate PRs #3–#12 per INTEGRATION_PLAN.md | ChatGPT (review/authorize) → Claude (execute) | TODO | P1 | — | Linear merges into feature/cosmic-match-foundation; #4 closed as included; CI green; no merge to main | INTEGRATION_PLAN.md | — | — |
+| T-31 | Narrative block 4: everyday situations, questions, agreements, chart-anchored sentences, per-pair variants, friendship guard | Claude | REVIEW | P1 | — | Repetition < 15% per language (now 16.5%); no empty/duplicate; 0 forbidden; 0 romance in friendship | editorial-metrics.json | claude/block4 | #12 |
+| T-32 | CI cost controls for a private repo | Claude | REVIEW | P0 | — | ≤ 2,000 min/month estimate; artefacts < 500 MB | DEPLOYMENT.md | claude/block4 | #12 |
+| T-33 | Validate PR #11 (natal-kb-0.2) | Claude | DONE (tests pass with #12; defects listed for ChatGPT) | P1 | — | tests/knowledge-base.test.mjs | QA_REPORT | claude/block4 | #12 |
+| T-34 | Sym-C as experimental candidate in the app (flag), coverage and uncertainty shown | Claude | TODO (next block) | P2 | — | `?scoring=sym-c` behind a flag; 0.1 default; overlays only in the narrative | — | claude/* | — |

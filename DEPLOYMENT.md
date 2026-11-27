@@ -68,3 +68,32 @@ This builds in GitHub Actions and uploads `out/` with `wrangler pages deploy`. I
 1. Cloudflare → My Profile → API Tokens → Create Token → *Custom*: permission **Account · Cloudflare Pages · Edit**, limited to the account that owns `astralis-ai`.
 2. GitHub → repo Settings → Secrets and variables → Actions → *New repository secret*: `CLOUDFLARE_API_TOKEN` (the token) and `CLOUDFLARE_ACCOUNT_ID` (shown on the Cloudflare dashboard sidebar).
 3. Tell Claude the secrets exist. The deploy workflow will reference them by name only. Cloudflare Pages Free covers this, at no cost.
+
+## Block 4 update: versioned catalog in a private repository (P0-B)
+The catalog is distributed as an asset of a **release of this same repository**. Once the repo is private, the asset is private too, and nothing is made public.
+- **Bundle:** `geography.tar.gz` = `geography/` (JSON shards + `ATTRIBUTION.md`) + `geography-stats.json`.
+- **`ATTRIBUTION.md`:** GeoNames source URLs, CC BY 4.0 and its attribution line, version, generation time, build commit, and the transformations applied. It is also served at `/geography/ATTRIBUTION.md`. The site footer and the location picker already credit GeoNames.
+- **`geography.lock.json`:** `version`, `url`, `assetApiUrl`, `sha256`, `bytes`, `generatedAt`, `builtFromCommit`, `previousVersion`, `source`, `countries`, `places`.
+- **Release workflow checks:** catalog tests (incl. rural Peru); a bundle allowlist (only `geography/`, `.json`, `ATTRIBUTION.md`, `SOURCE.txt`); a private-pattern scan when the `PRIVATE_PATTERNS` secret exists; and a reinstall from the packed bundle, which must be byte-identical.
+- **Authenticated download** (`scripts/fetch-geography-release.py`): with `GEOGRAPHY_TOKEN` set, it calls the GitHub API asset URL and then follows the redirect to signed storage **without** the token. The token is never printed (tested: `tests/geography-release.test.mjs`). A SHA-256 mismatch or a failed download is a hard error.
+- **Update policy:** monthly, or when a geography bug needs new data. A person publishes a release `geo-YYYY.MM.DD`, then Claude commits the new lock file with `previousVersion` set.
+- **Rollback:** revert the commit that changed `geography.lock.json` (old releases are kept as prereleases), or set the lock back to `previousVersion`.
+
+### Activation, in this order (founder steps; no cost)
+1. Make the repo private (Settings → General → Danger zone).
+2. **GitHub → Releases → Draft a new release.** Tag `geo-2026.11.27` (create new tag), target `claude/block4`, title "Geography catalog geo-2026.11.27", tick *pre-release*, **Publish**. The workflow (~15 min of Actions) builds the catalog and attaches `geography.tar.gz` + `geography.lock.json`. *Agents cannot do this: the session proxy refuses tag pushes (HTTP 403).*
+3. GitHub → Settings (your profile) → Developer settings → Fine-grained tokens → *Generate*: repository access **only `mavibeaj/astralis-ai`**, permission **Contents: Read-only**, expiry 90 days.
+4. Cloudflare → Workers & Pages → astralis-ai → Settings → Variables and secrets → add **`GEOGRAPHY_TOKEN`** as type *Secret* (Production and Preview). Never paste it in chat, files or URLs.
+5. Tell Claude "token set". Claude then commits `geography.lock.json` from the release. Until that commit, Cloudflare keeps the current behaviour (GeoNames import per build), so nothing breaks in between.
+6. Also make sure the Cloudflare Pages GitHub app still has access to the repo after it goes private (Cloudflare → Pages → astralis-ai → Settings → Builds → Git repository).
+
+## Block 4: CI cost controls for a private repository (P0-C)
+Measured while the repo was public (so $0): the `preview` job averaged **69 min per run (max 122)** waiting for Cloudflare. That was ~85% of all job time. Foundation CI used 3 jobs × rounding-up.
+Changes (critical checks are unchanged):
+- **Foundation CI:** a single job instead of three, since GitHub rounds each job up to the minute. Superseded runs are cancelled. npm and Playwright are cached. Docs-only pushes skip CI. The site artefact is uploaded only on failure (it was 13.5 MB per run, 1.1 GB in total). Evidence is kept 5 days.
+- **Preview verify:** only on PRs labelled `verify-preview`. At most 40 min of polling at 60 s. Superseded runs are cancelled.
+- **Runner smoke:** manual only.
+- **World import:** concurrency cancel, npm cache, shorter retention.
+- **Agents:** push in batches. Run tests locally before pushing.
+
+**Estimate after the changes:** ~10 pushes/day × ~4 min ≈ 1,200 min/month. Gate verifications ≈ 10 × 25 min = 250. World imports and the catalog release ≈ 60. **Total ≈ 1,500 of 2,000 free minutes.** Artefacts: the 1.27 GB stored today expires within 7 days (14 days for some). New uploads ≈ 10 MB per run × 5 days, well under 500 MB. The `astralis-web-preview` artefacts (1.1 GB) are not sensitive; deleting them early would free storage immediately, but that needs the founder's yes. Billing stays off: GitHub Free blocks extra usage instead of charging, unless a payment method and spending limit are set.

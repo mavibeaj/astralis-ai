@@ -33,3 +33,9 @@
 - **TD-31 Three relationship groups:** harmonious → symbolic affinities; conjunctions (mixed) → intense or mixed connections (possibility + care, never stated as fact); square/opposition → differences. The free edition keeps 5 cards (the intense card takes an affinity slot).
 - **TD-32 symbolic-0.2 parameter sets are versioned** (`candidate`, `sym-a`, `sym-b`, `sym-c`). 0.1 stays frozen. Friendship excludes attraction and renormalises the remaining weights. No set is tuned toward a mean.
 - **TD-33 LLM scope and budget:** only chapters 3–8 may be rewritten. Budget target USD 0.05 and cap USD 0.10 per report, retries included (worst case). Over the cap or over `maxOutputTokens` → deterministic generator. Prices are parameters, never hard-coded quotes.
+- **TD-34 History cleanup method:** `git filter-repo` with text rules kept outside the repo, plus a blob swap for the affected fixture (its regenerated twin) so old branches stay functionally consistent. `main` is excluded to keep its signed root. Push with `--force-with-lease` per branch. Verified by identical test results on every branch before and after.
+- **TD-35 Catalog in a private repo:** a release asset of the same repo, fetched by Cloudflare with a read-only fine-grained token (`GEOGRAPHY_TOKEN`). The redirect to storage is followed without the token. No public mirror is needed.
+- **TD-36 CI under the private-repo quota:** one job per PR push, concurrency cancel, docs skip, on-demand preview verification by label, failure-only site artefact.
+- **TD-37 Contact readings are action-oriented:** each built reading gives a situation, a question, a way to express the need and an agreement to explore. Material is non-romantic and valid for every relationship type.
+- **TD-38 Friendship guard at narrative level:** any library sentence with romantic vocabulary is replaced in friendship readings (tested for all Venus signs, ES/EN), independent of library fixes.
+

@@ -1,4 +1,40 @@
-# QA report (updated 2026-11-27, block 3: PR #10)
+# QA report (updated 2026-11-27, block 4: PR #12)
+
+## Block 4 (PR #12, `claude/block4`, stacked on #11)
+**Verification (executed):** typecheck ✓ · `npm test` 252 tests: 243 pass, 0 fail, 8 skipped (7 need the world catalog; 1 privacy guard needs the secret), 1 todo (2 pre-existing library benefits, ChatGPT T-28) · `npm run build:fixture` ✓ · Playwright 1280/390 incl. Lima ✓ · axe WCAG 2.1 A/AA 0 violations · **CI on PR #12 (new single job) ✓**.
+
+**Privacy (founder-authorized):** see PRIVACY_INCIDENT.md.
+- Artefacts 15/15 deleted.
+- CI logs: 101 jobs scanned → 21 test logs contained the value → deleted; re-scan 0.
+- History: filter-repo dry run, then the real cleanup.
+  - Checked on all 12 branches: 0 blobs with the value, identical commit counts, 0 unexpected lines, identical test results before and after.
+  - Pushed with `--force-with-lease`. `main` untouched. PRs #3–#12 updated and mergeable.
+- Visibility change was blocked (proxy 403, no browser session).
+
+**PR #11 (natal-kb-0.2) validation:** new `tests/knowledge-base.test.mjs`.
+- Passes: version, sorted keys, 0 aliases, X/Y in pair, both languages and all fields, only {X}/{Y} placeholders, no text shared across pairs, friendship rule, EN pronouns.
+- 32 entries (14 + 18 new). A spot-check of {X} semantics on 14 entries is consistent.
+- Defects for ChatGPT:
+  - 2 pre-existing benefits stated as fact: Moon–Venus EN, Moon–Saturn ES.
+  - Venus in Scorpio `love` (ES) contains "deseo", a romantic term in friendship. The narrative now substitutes the sign's neutral style in friendship and is tested for every Venus sign.
+  - #11 alone fails one narrative test (C-06), because the test keyed on old titles. Fixed in #12.
+
+**Narrative (block 4):**
+- Contact readings without a library entry now use an everyday situation, what each person may offer, a concrete question, a way to say a need (quoted), active listening, and an agreement to explore.
+- Element, Mars and Moon sentences are anchored to the chart (points named, weight %).
+- Frame sentences have per-pair variants: open questions, closing, "say it out loud".
+- Bilingual corpus, 10 ES + 10 EN, with repetition measured per language:
+  - repetition 22.3% → **16.5%** average (11.1–19.6%), target < 15% not reached yet. The rest is mostly sign-level library text (same placement → same sentence).
+  - C08 (8 contacts) is not padded (1,603–1,636 words).
+  - C06: daily evidence/signs/questions 1/4/6.
+
+**Catalog (P0-B):**
+- Release workflow: attribution and licence file, provenance, transformations, allowlist, private-pattern scan, rollback pointer, byte-identical reinstall. Simulated locally: clean case passes, planted-pattern case blocked.
+- Authenticated download tested: the token is never sent to storage and never printed.
+- Not published: agent tag pushes are refused (403), so the founder starts it from the Releases UI.
+
+**Costs (P0-C):** measured job time: the `preview` job averaged 69 min (85% of the total). The workflows were restructured (DEPLOYMENT.md). Estimate ≈ 1,500 of 2,000 free minutes per month.
+
 
 ## Block 3 (PR #10, `claude/block3`)
 **Verification run (all executed):** typecheck ✓ · `npm test` 241 tests, 233 pass, 0 fail, 8 skipped (7 need the full catalog and pass in CI; 1 is the privacy guard, which needs the `PRIVATE_PATTERNS` secret) · `npm run build:fixture` ✓ · Playwright desktop 1280 + mobile 390 ✓, now incl. Lima · axe-core WCAG 2.1 A/AA: 0 violations (1280 and 390).
