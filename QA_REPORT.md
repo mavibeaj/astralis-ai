@@ -1,4 +1,33 @@
-# QA report: P0 geography + Blocks 4, 5 and 9 (2026-11-26)
+# QA report (updated 2026-11-27)
+
+## Cosmic Story v2 (PR #8)
+- `npm test`: 211 tests, 204 pass, 0 fail, 7 skipped. The skips need the full GeoNames catalog and pass in CI.
+- 20 interpretation tests and 15 commerce tests.
+- What the tests cover:
+  - 11 sections per person, each with evidence.
+  - Different people get different text; the same Sun sign with a different configuration gets different text.
+  - Every cited id exists in Layer A.
+  - Affinities and tensions come only from real cross aspects; none are invented when there is no aspect.
+  - Swapping A and B keeps the same affinities and title.
+  - Unknown time: stable and unstable Moon, a planet changing sign, Sun ingress day.
+  - ES/EN; partner, crush, friendship (no romantic words).
+  - Forbidden claims checked across 12 variants; no contradictions; determinism.
+  - Length: free 1,000–1,600 words, premium 2,900–5,000.
+  - LLM payload has no names, dates, places or coordinates; the response validator works.
+  - Chaptered premium HTML.
+- Measured on the fictional Chiclayo 1993 / Tokyo 1995 pair:
+  - Free: ES 1,426 words, EN 1,345.
+  - Premium: ES 3,280 words, EN 2,968.
+- Playwright on the static export, desktop 1280 and mobile 390:
+  - Cover; ≥ 10 chapters; ≥ 11 cards per person; evidence disclosure; technical chapter closed by default.
+  - Wheels on demand; premium excerpt; PNG card.
+  - Checkout → report mentions 8 chapters → HTML download → recovery.
+  - Unknown-time notice, and the Ascendant shown as not calculable.
+  - No JS errors, no horizontal overflow.
+  - Screenshots of the cover and chapters 1–8 on both viewports.
+- Quality gap found: cross pairs without a library reading produce generic text (assigned to ChatGPT, T-10).
+
+## Previous: P0 geography + Blocks 4, 5 and 9 (2026-11-26)
 
 Earlier results (Blocks 1–3: ephemeris validation, CI root cause) are in git history (`7730b46`).
 

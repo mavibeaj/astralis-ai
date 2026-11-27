@@ -14,3 +14,9 @@
 - **TD-12 Streaming import** with a 3-country window (peak memory was 6.1 GB when all countries were held in memory).
 - **TD-13 Wheels** render engine output only; glyphs may be nudged apart for legibility (order preserved), true degrees shown in tooltip and table.
 - **TD-14 Checkout simulation** is provider-agnostic; real adapter must be server-side with signed idempotent webhooks; report input locked at order time.
+- **TD-15 Three-layer interpretation.** Astronomy → Layer A evidence (ids, no text) → Layer B narrative (deterministic templates). A future LLM may only rewrite cited evidence; the validator enforces this.
+- **TD-16 Knowledge base as versioned data** (`natal-kb-0.1`), gender-neutral Spanish (adjectives on feminine nouns), singular "they" in English, friendship-safe variants.
+- **TD-17 Unknown-time robustness:** sign-level Moon only when it is stable all day; planets changing sign are dropped; aspects must hold at 00:00 and 23:59.
+- **TD-18 No padding:** affinities and differences come only from real cross aspects; daily-life areas without evidence are labelled as topics to discuss.
+- **TD-19 Scores de-emphasised:** symbolic-0.1 and 0.2 are unchanged and moved to the technical chapter; the narrative never shows scores.
+- **TD-20 Premium story stored client-side** with the simulated order (localStorage) so recovery works offline. Server storage (Supabase) must apply data minimisation before launch.
