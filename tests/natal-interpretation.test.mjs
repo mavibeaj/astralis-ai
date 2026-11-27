@@ -184,7 +184,7 @@ test('C-06: chapter bridges, complementarity block, specific generic cards', () 
   for (const k of [1, 2, 3, 6, 7]) assert.ok(s.couple.bridges[k].length > 20, 'bridge ' + k);
   assert.match(s.couple.bridges[1], /Ana/); assert.match(s.couple.bridges[2], /Leo/);
   assert.ok(s.couple.complement.length >= 1);
-  const generic = [...s.couple.affinities, ...s.couple.tensions].filter(c => !/^(Dos|Lo que|Identidad|Una|Conversaciones|Palabras|Entre|Ternura|Gustos|Energía|Estructura|Cuidar|Seguridad|Un cariño|Afecto|Se impulsan|Optimismo|Agrado|Magnetismo|Cuando)/.test(c.title));
+  const generic = [...s.couple.affinities, ...s.couple.intense, ...s.couple.tensions].filter(c => c.area === 'general'); // built for the contact (no library entry)
   for (const c of generic) assert.match(c.story, /\((en|[A-ZÁÉÍÓÚ][\p{L} ]+ en) [A-ZÁÉÍÓÚ]/u, 'generic card names the signs: ' + c.story);
   for (const d of s.couple.daily.filter(d => d.status === 'signs')) assert.match(d.text, /lectura secundaria por signos/);
 });
