@@ -1,7 +1,7 @@
 // Pinned geography catalog: install, hash refusal, missing lock and unsafe bundles.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {spawnSync} from 'node:child_process';
+import {spawnSync, spawn} from 'node:child_process';
 import {mkdtempSync, writeFileSync, readFileSync, existsSync, mkdirSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {tmpdir} from 'node:os';
@@ -49,4 +49,31 @@ test('bundle members escaping the target directory are refused', () => {
   const r = py(d);
   assert.notEqual(r.status, 0);
   assert.match(r.stderr, /unsafe bundle member/);
+});
+
+test('private repo: token → API asset URL → redirect fetched WITHOUT the token; token never printed', async () => {
+  const {createServer} = await import('node:http');
+  const d = mkdtempSync(join(tmpdir(), 'geo-')); const b = bundle(d); const body = readFileSync(b);
+  const TOKEN = 'tok_' + Math.random().toString(36).slice(2);
+  let leakedToStorage = false;
+  const srv = createServer((req, res) => {
+    if (req.url === '/api/asset') {
+      if (req.headers.authorization !== `Bearer ${TOKEN}` || req.headers.accept !== 'application/octet-stream') {res.writeHead(404); return res.end();}
+      res.writeHead(302, {Location: `http://127.0.0.1:${srv.address().port}/storage/blob`}); return res.end();
+    }
+    if (req.url === '/storage/blob') {if (req.headers.authorization) {leakedToStorage = true; res.writeHead(400); return res.end();} res.writeHead(200); return res.end(body);}
+    res.writeHead(404); res.end();
+  });
+  await new Promise(r => srv.listen(0, '127.0.0.1', r));
+  const port = srv.address().port;
+  writeFileSync(join(d, 'geography.lock.json'), JSON.stringify({version: 't', url: `http://127.0.0.1:${port}/public-unavailable`, assetApiUrl: `http://127.0.0.1:${port}/api/asset`, sha256: sha(b)}));
+  const r = await new Promise(res => {const p = spawn('python3', [SCRIPT], {cwd: d, env: {...process.env, GEOGRAPHY_TOKEN: TOKEN}}); let out = ''; p.stdout.on('data', x => out += x); p.stderr.on('data', x => out += x); p.on('close', code => res({code, out}));});
+  srv.close();
+  assert.equal(r.code, 0, r.out);
+  assert.ok(!leakedToStorage, 'token must not be sent to the storage redirect');
+  assert.ok(!r.out.includes(TOKEN), 'token must never be printed');
+  assert.ok(existsSync(join(d, 'public/geography/countries.json')));
+  // Wrong token: fails without printing it.
+  const bad = spawnSync('python3', [SCRIPT], {cwd: d, env: {...process.env, GEOGRAPHY_TOKEN: 'wrong_' + TOKEN}, encoding: 'utf8'});
+  assert.notEqual(bad.status, 0); assert.ok(!(bad.stdout + bad.stderr).includes(TOKEN));
 });

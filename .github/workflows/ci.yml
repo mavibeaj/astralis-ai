@@ -1,19 +1,23 @@
 name: Foundation CI
+# Cost-aware (private repo: GitHub Free = 2,000 min/month, 500 MB artefacts). One job instead of three
+# (each job is billed rounded up to the minute), superseded runs are cancelled, docs-only pushes skip CI,
+# and the static site is uploaded only when something fails. Critical checks are unchanged.
 on:
   pull_request:
+    paths-ignore: ['**/*.md', 'docs/**']
   push:
     branches: [feature/cosmic-match-foundation]
+    paths-ignore: ['**/*.md', 'docs/**']
 permissions:
   contents: read
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   verify:
-    name: ${{ matrix.check }}
+    name: test · typecheck · build · journey
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        check: [test, typecheck, build]
+    timeout-minutes: 20
     env:
       NEXT_TELEMETRY_DISABLED: '1'
       # CI builds a real GeoNames subset (one country per continent + Peru); the deploy build is world-wide.
@@ -25,64 +29,49 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
       - name: Install dependencies
+        run: npm ci
+      - name: Unit tests
+        run: npm test 2>&1 | tee diagnostics-test.txt; exit ${PIPESTATUS[0]}
+      - name: Typecheck
+        run: npm run typecheck 2>&1 | tee diagnostics-typecheck.txt; exit ${PIPESTATUS[0]}
+      - name: Build (GeoNames subset + gate)
+        run: npm run build 2>&1 | tee diagnostics-build.txt; exit ${PIPESTATUS[0]}
+      - name: Validate generated geography catalog
+        run: node --test tests/geography-catalog.test.mjs
+      - name: Verify static entrypoint
+        run: test -s out/index.html
+      - name: Cache Playwright browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-1.56.1-chromium
+      - name: Install browser test runtime
         run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
-      - name: Runtime diagnostics
-        run: node --version && npm --version
-      - name: Run check and retain diagnostics
-        shell: bash
-        run: |
-          set +e
-          npm run "${{ matrix.check }}" > diagnostics.txt 2>&1
-          result=$?
-          cat diagnostics.txt
-          if [ "$result" -ne 0 ]; then
-            tail -n 60 diagnostics.txt >> "$GITHUB_STEP_SUMMARY"
-            echo "::error::${{ matrix.check }} failed; inspect job summary"
-          fi
-          exit "$result"
-      - name: Upload diagnostics
+          npm install --no-save --package-lock=false playwright@1.56.1 axe-core@4.10.2
+          npx playwright install --with-deps chromium
+      - name: Desktop and mobile journey (+ axe WCAG 2.1 A/AA, serious/critical fail)
+        env:
+          A11Y: strict
+        run: node tests/browser-smoke.mjs
+      - name: Upload diagnostics and screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: diagnostics-${{ matrix.check }}
-          path: diagnostics.txt
+          name: ci-evidence
+          path: |
+            diagnostics-*.txt
+            browser-*.png
+            a11y-*.json
           if-no-files-found: warn
-
-      - name: Validate generated geography catalog
-        if: matrix.check == 'build'
-        run: node --test tests/geography-catalog.test.mjs
-      - name: Verify static entrypoint
-        if: matrix.check == 'build'
-        run: test -s out/index.html
-      - name: Upload runnable static website
-        if: matrix.check == 'build'
+          retention-days: 5
+      - name: Upload static site (only on failure, for debugging)
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: astralis-web-preview
           path: out/
           include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Install browser test runtime
-        if: matrix.check == 'build'
-        run: |
-          npm install --no-save --package-lock=false playwright@1.56.1 axe-core@4.10.2
-          npx playwright install --with-deps chromium
-      - name: Test desktop and mobile browser journey (+ axe WCAG 2.1 A/AA, serious/critical fail)
-        if: matrix.check == 'build'
-        env:
-          A11Y: strict
-        run: node tests/browser-smoke.mjs
-      - name: Upload browser screenshots
-        if: always() && matrix.check == 'build'
-        uses: actions/upload-artifact@v4
-        with:
-          name: browser-preview
-          path: |
-            browser-*.png
-            a11y-*.json
-          if-no-files-found: warn
-          retention-days: 7
+          if-no-files-found: ignore
+          retention-days: 2
