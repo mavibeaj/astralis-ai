@@ -160,3 +160,7 @@ vite.config.ts.timestamp-*
 public/geography/
 browser-*.png
 next-env.d.ts
+geography-stats.json
+geo-perf.json
+time.txt
+__pycache__/

@@ -1,24 +1,20 @@
-// Validates a generated catalog in public/geography (full GeoNames build or offline fixture).
-// Skips when no catalog has been generated. Expected values are taken from GeoNames itself
-// (geonameid + IANA zone); coordinates are only checked against coarse bounding boxes.
+// Validates a generated catalog in public/geography (GeoNames build or offline fixture)
+// through the same search code the browser uses (src/lib/geo-search.mjs).
+// Expected IDs and zones come from GeoNames; coordinates are checked against coarse boxes only.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync, readdirSync, statSync} from 'node:fs';
 import {join} from 'node:path';
+import {parseManifest, searchPlaces} from '../src/lib/geo-search.mjs';
 
 const ROOT = 'public/geography';
 const has = existsSync(join(ROOT, 'countries.json'));
-const normalize = s => s.toLowerCase().normalize('NFKD').replace(/\p{M}/gu, '').replace(/ß/g, 'ss').replace(/ς/g, 'σ');
-function bucket(s) {let h = 0; for (const b of new TextEncoder().encode(Array.from(normalize(s)).slice(0, 2).join(''))) h = (h * 31 + b) % 64; return String(h);}
-function search(cc, query) {
-  const q = normalize(query);
-  const path = join(ROOT, cc, bucket(q) + '.json');
-  if (!existsSync(path)) return [];
-  const map = new Map();
-  for (const [p, aliases] of JSON.parse(readFileSync(path, 'utf8'))) if (aliases.some(a => a.startsWith(q))) map.set(p[0], p);
-  return [...map.values()];
-}
-const countries = has ? new Set(JSON.parse(readFileSync(join(ROOT, 'countries.json'), 'utf8')).map(c => c[0])) : new Set();
+const raw = has ? JSON.parse(readFileSync(join(ROOT, 'countries.json'), 'utf8')) : null;
+const countries = has ? new Map(parseManifest(raw).map(c => [c.code, c])) : new Map();
+const fullGeonames = has && String(raw.source).startsWith('geonames');
+const load = async path => JSON.parse(readFileSync(join('public', path), 'utf8'));
+const find = async (cc, q) => (await searchPlaces(countries.get(cc), q, load, 500)).rows;
+const skip = cc => !has ? 'catalog not generated' : !countries.has(cc) ? 'catalog lacks ' + cc : false;
 
 // [country, query, geonameid, IANA zone, latMin, latMax, lonMin, lonMax]
 const CASES = [
@@ -36,36 +32,56 @@ const CASES = [
   ['US', 'Anchorage', '5879400', 'America/Anchorage', 60.8, 61.6, -150.5, -149.3],
   ['ES', 'Cádiz', '2520600', 'Europe/Madrid', 36.2, 36.8, -6.6, -6],
 ];
-
 for (const [cc, q, id, zone, la0, la1, lo0, lo1] of CASES) {
-  test(`geography: ${cc} ${q}`, {skip: !has || !countries.has(cc) ? 'catalog not generated for ' + cc : false}, () => {
-    const hit = search(cc, q).find(p => p[0] === id);
+  test(`geography: ${cc} ${q}`, {skip: skip(cc)}, async () => {
+    const hit = (await find(cc, q)).find(p => p.id === id);
     assert.ok(hit, `${q} (${id}) not found`);
-    assert.equal(hit[4], zone);
-    assert.ok(hit[6] >= la0 && hit[6] <= la1 && hit[7] >= lo0 && hit[7] <= lo1, `coordinates out of range: ${hit[6]},${hit[7]}`);
+    assert.equal(hit.zone, zone);
+    assert.ok(hit.latitude >= la0 && hit.latitude <= la1 && hit.longitude >= lo0 && hit.longitude <= lo1, `coordinates out of range: ${hit.latitude},${hit.longitude}`);
   });
 }
 
-test('geography: accent-insensitive and alternate-name search', {skip: !has || !countries.has('PE')}, () => {
-  assert.ok(search('PE', 'ferrenafe').some(p => p[0] === '3697033'));
-  assert.ok(search('PE', 'Cusco').some(p => p[0] === '3941584'));
-  assert.ok(search('PE', 'Qusqu').some(p => p[0] === '3941584'));
+// Rural Lambayeque (Peru): only present in the full GeoNames dump. Checked by name + region + coarse box.
+const LAMBAYEQUE = ['Pimentel', 'Monsefú', 'Reque', 'Eten', 'Incahuasi', 'Cañaris'];
+for (const q of LAMBAYEQUE) {
+  test(`geography: rural Lambayeque ${q}`, {skip: !fullGeonames ? 'needs full GeoNames catalog' : skip('PE')}, async () => {
+    const hits = (await find('PE', q)).filter(p => p.region === 'Lambayeque');
+    assert.ok(hits.length > 0, `${q} not found in Lambayeque`);
+    for (const p of hits) {
+      assert.equal(p.zone, 'America/Lima');
+      assert.ok(p.latitude > -7.3 && p.latitude < -5.4 && p.longitude > -80.7 && p.longitude < -78.9, `${p.name} ${p.latitude},${p.longitude}`);
+    }
+  });
+}
+
+test('geography: accent-insensitive and alternate-name search', {skip: skip('PE')}, async () => {
+  assert.ok((await find('PE', 'ferrenafe')).some(p => p.id === '3697033'));
+  assert.ok((await find('PE', 'Cusco')).some(p => p.id === '3941584'));
+  assert.ok((await find('PE', 'Qusqu')).some(p => p.id === '3941584'));
+});
+test('geography: non-Latin alternate names', {skip: skip('JP')}, async () => {
+  assert.ok((await find('JP', '東京')).some(p => p.id === '1850147'));
+});
+test('geography: duplicated names are returned separately with their regions', {skip: !fullGeonames ? 'needs full GeoNames catalog' : skip('PE')}, async () => {
+  const hits = (await find('PE', 'San José')).filter(p => p.name === 'San José');
+  assert.ok(new Set(hits.map(p => p.region)).size >= 3, 'expected several regions for San José');
+});
+test('geography: exact match ranks first', {skip: skip('PE')}, async () => {
+  assert.equal((await find('PE', 'Chiclayo'))[0].id, '3698350');
 });
 
 test('geography: every entry has valid coordinates and an IANA zone', {skip: !has}, () => {
   const valid = new Set(Intl.supportedValuesOf('timeZone'));
   const unknown = new Set();
-  for (const cc of countries) for (const f of readdirSync(join(ROOT, cc))) for (const [p] of JSON.parse(readFileSync(join(ROOT, cc, f), 'utf8'))) {
+  for (const cc of countries.keys()) for (const f of readdirSync(join(ROOT, cc))) for (const [p] of JSON.parse(readFileSync(join(ROOT, cc, f), 'utf8')).p) {
     assert.ok(Math.abs(p[6]) <= 90 && Math.abs(p[7]) <= 180, p[1]);
     if (!valid.has(p[4])) unknown.add(p[4]);
   }
-  // Aliases (e.g. legacy names) can be missing from Intl's canonical list but must still resolve.
   for (const z of unknown) assert.doesNotThrow(() => new Intl.DateTimeFormat('en', {timeZone: z}), z);
 });
-
 test('geography: within Cloudflare Pages static asset limits', {skip: !has}, () => {
   let files = 0;
   const walk = d => {for (const f of readdirSync(d)) {const p = join(d, f); const s = statSync(p); if (s.isDirectory()) walk(p); else {files++; assert.ok(s.size <= 25 * 1024 * 1024, p + ' exceeds 25 MiB');}}};
   walk(ROOT);
-  assert.ok(files <= 20000, `${files} files exceeds 20,000`);
+  assert.ok(files <= 19000, `${files} files exceeds budget`);
 });

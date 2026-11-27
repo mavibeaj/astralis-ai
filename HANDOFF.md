@@ -1,12 +1,31 @@
-# Handoff — Claude → ChatGPT / founder
+# Handoff: Claude → ChatGPT / founder (2026-11-26)
 
-Branch `claude/stabilization` from `feature/cosmic-match-foundation` @ abcd934. Not pushed: the session had read-only GitHub access. Delivered as a git bundle; apply with:
+## Merge order
+1. **#3 P0 geography**: `claude/geo-p0-fix` → `feature/cosmic-match-foundation`. CI and the world import are green.
+2. **#4 symbolic-0.2 candidate**: `claude/synastry-0.2` → `feature/cosmic-match-foundation`. Independent of #3.
+3. **#5 redesign + wheels**: `claude/product-experience`. After #3 merges, retarget it to the integration branch. It already contains #4; the `page.tsx` conflict was resolved in favour of the redesign.
+4. **#6 checkout simulation**: `claude/checkout-sim` → `claude/product-experience`. Retarget it after #5 merges.
 
-    git fetch astralis-claude.bundle claude/stabilization:claude/stabilization
-    git push origin claude/stabilization   # then open PR → feature/cosmic-match-foundation
+## Owner action required (agents cannot do this)
+1. In Cloudflare Pages → astralis-ai → Settings → Build, confirm:
+   - Build command: `npm run build` (or `npm run build:world`, now an alias)
+   - Output directory: `out`
+   - No `GEOGRAPHY_COUNTRIES` variable
+2. Redeploy, and look for this line in the build log: `✓ Geography gate: 248 countries …`
+3. If the build fails on time or memory (world import: about 12 min and 2.2 GB on GitHub runners), see NEXT_TASKS item 4.
 
-Commits: 69ebda2 lockfile · 1140979 CI fix · 7ae6783 geography fixture · 0dd99ac catalog tests · d52d821 ephemeris reference tests · f4bef7b 1900+ births · 23ca543 Placidus + mean node · (this commit) docs.
+The live site has **not** been verified by any agent. Do not mark the P0 as resolved until the live URL shows the countries list and returns Chiclayo.
 
-Verify after push: Foundation CI `build` job (live PE import + catalog test + browser smoke) must pass. Review points: TD-02 licence posture, TD-03 pre-1970 flag wording, shard-size risk (QA_REPORT). Local reproduction: `python3 scripts/build-geography-fixture.py && npm run build && CHROMIUM_PATH=$(which chromium) node tests/browser-smoke.mjs`.
+## Review requests for the CTO
+- symbolic-0.2 internal weights (see the open questions in COMPATIBILITY_METHODOLOGY.md).
+- TD-08 to TD-14 in TECHNICAL_DECISIONS.md.
+- Payment-provider adapter contract (MONETIZATION.md).
 
-Risks: CI fix unverified on Actions; rural Peru coverage unverified; full world catalog size unknown.
+## Reproduce locally
+    npm ci
+    pip install geonamescache==3.0.2 reverse_geocoder==1.5.1   # offline fixture only
+    npm run build:fixture          # never for deployment; the gate blocks fixture data in npm run build
+    npm install --no-save --package-lock=false playwright@1.56.1 && npx playwright install chromium
+    node tests/browser-smoke.mjs   # writes browser-*.png screenshots
+
+CI artifacts: `browser-preview` (Foundation CI, screenshots) and `geography-world-metrics` (world import).

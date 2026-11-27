@@ -16,6 +16,8 @@ jobs:
         check: [test, typecheck, build]
     env:
       NEXT_TELEMETRY_DISABLED: '1'
+      # CI builds a real GeoNames subset (one country per continent + Peru); the deploy build is world-wide.
+      GEOGRAPHY_COUNTRIES: PE,JP,KE,IS,AU,BR,ES,US,GB
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,12 +26,6 @@ jobs:
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
-      - name: Generate Peru geography fixture from GeoNames
-        if: matrix.check == 'build'
-        run: GEOGRAPHY_COUNTRIES=PE python3 scripts/build-geography.py
-      - name: Validate generated geography catalog
-        if: matrix.check == 'build'
-        run: node --test tests/geography-catalog.test.mjs
       - name: Runtime diagnostics
         run: node --version && npm --version
       - name: Run check and retain diagnostics
@@ -52,6 +48,9 @@ jobs:
           path: diagnostics.txt
           if-no-files-found: warn
 
+      - name: Validate generated geography catalog
+        if: matrix.check == 'build'
+        run: node --test tests/geography-catalog.test.mjs
       - name: Verify static entrypoint
         if: matrix.check == 'build'
         run: test -s out/index.html
