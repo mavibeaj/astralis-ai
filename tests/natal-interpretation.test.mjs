@@ -184,7 +184,7 @@ test('C-06: chapter bridges, complementarity block, specific generic cards', () 
   for (const k of [1, 2, 3, 6, 7]) assert.ok(s.couple.bridges[k].length > 20, 'bridge ' + k);
   assert.match(s.couple.bridges[1], /Ana/); assert.match(s.couple.bridges[2], /Leo/);
   assert.ok(s.couple.complement.length >= 1);
-  const generic = [...s.couple.affinities, ...s.couple.tensions].filter(c => !/^(Dos|Lo que|Identidad|Una|Conversaciones|Palabras|Entre|Ternura|Gustos|Energía|Estructura|Cuidar|Seguridad|Un cariño|Afecto|Se impulsan|Optimismo|Agrado|Magnetismo|Cuando)/.test(c.title));
+  const generic = [...s.couple.affinities, ...s.couple.intense, ...s.couple.tensions].filter(c => c.area === 'general'); // built for the contact (no library entry)
   for (const c of generic) assert.match(c.story, /\((en|[A-ZÁÉÍÓÚ][\p{L} ]+ en) [A-ZÁÉÍÓÚ]/u, 'generic card names the signs: ' + c.story);
   for (const d of s.couple.daily.filter(d => d.status === 'signs')) assert.match(d.text, /lectura secundaria por signos/);
 });
@@ -225,4 +225,11 @@ test('block 3: one reading per real contact — no shared card stories, no alias
 test('block 3: no claims of attraction, reciprocity, trust or real feelings asserted from one aspect', () => {
   const ASSERT = /\bhay magnetismo|there is magnetism|tienen puntos de encuentro reales|real meeting points|^(Confianza|Trust) |^(Un afecto|Affection) que se siente/im;
   for (const lang of ['es', 'en']) for (const s of sample({lang, premium: true})) {const t = allText(s) + '\n' + [...s.couple.intense].flatMap(c => [c.story, c.benefit, c.care]).join('\n'); assert.ok(!ASSERT.test(t), t.split('\n').find(l => ASSERT.test(l)));}
+});
+test('block 4: friendship readings never carry romantic vocabulary, for any Venus sign (both languages)', () => {
+  for (let m = 1; m <= 12; m++) for (const lang of ['es', 'en']) {
+    const date = `1991-${String(m).padStart(2, '0')}-15`;
+    const t = allText(run({...A, date}, B, {lang, relationship: 'friendship', premium: true}));
+    assert.ok(!ROMANTIC_WORDS.test(t), `${date}/${lang}: ${t.split('\n').find(l => ROMANTIC_WORDS.test(l))}`);
+  }
 });

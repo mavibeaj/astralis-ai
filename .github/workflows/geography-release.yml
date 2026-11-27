@@ -1,55 +1,94 @@
 name: Geography catalog release
-# Builds the world GeoNames catalog ONCE and publishes it as a versioned, SHA-256-pinned
-# GitHub Release asset. Deploy builds then install that bundle (scripts/fetch-geography-release.py)
-# instead of re-importing 5.66 M places on every narrative/UI commit.
-#
-# Started only by a person: pushing a tag `geo-YYYY.MM.DD` (or Run workflow once this file is on
-# the default branch). It publishes public content (a release with CC BY 4.0 GeoNames data),
-# so agents do not push these tags without the founder's approval. Uses GITHUB_TOKEN only.
+# Builds the world GeoNames catalog ONCE and attaches it, SHA-256-pinned, to a release of THIS (private)
+# repository. Deploy builds install it via scripts/fetch-geography-release.py (GEOGRAPHY_TOKEN when private).
+# Started only by a person (or an agent with the founder's written authorization) pushing a tag `geo-*`.
+# Data: GeoNames (https://www.geonames.org/), CC BY 4.0. Uses GITHUB_TOKEN only; no other credentials.
 on:
   push:
     tags: ['geo-*']
-  workflow_dispatch:
+  # Founder path without a terminal: GitHub → Releases → Draft a new release → tag `geo-YYYY.MM.DD` (new tag)
+  # → target branch claude/block4 → Publish. The asset and lock file are attached automatically.
+  release:
+    types: [published]
 permissions:
   contents: write
+concurrency:
+  group: geography-release
+  cancel-in-progress: false
 jobs:
   release:
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 45
     env:
       NEXT_TELEMETRY_DISABLED: '1'
       GEOGRAPHY_REBUILD: '1'
+      PRIVATE_PATTERNS: ${{ secrets.PRIVATE_PATTERNS }}
+    if: startsWith(github.event.release.tag_name || github.ref_name, 'geo-')
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
       - run: npm ci
       - name: World GeoNames import
         run: python3 scripts/build-geography.py
       - name: Validate catalog (incl. rural Peru)
         run: node --test tests/geography-catalog.test.mjs
-      - name: Package and hash
+      - name: Package with attribution, provenance and transformations
         id: pkg
         run: |
-          tag="${GITHUB_REF_NAME}"; case "$tag" in geo-*) ;; *) tag="geo-$(date -u +%Y.%m.%d)-manual";; esac
+          tag="${{ github.event.release.tag_name || github.ref_name }}"
+          generated=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           mkdir -p bundle && cp -r public/geography bundle/ && cp geography-stats.json bundle/
+          cat > bundle/geography/ATTRIBUTION.md <<MD
+          # Geographic data — attribution and license
+          Source: GeoNames geographical database, https://www.geonames.org/ (export dumps https://download.geonames.org/export/dump/).
+          License: Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/.
+          Attribution: "Contains data from GeoNames (geonames.org), licensed under CC BY 4.0."
+          Catalog version: ${tag} · generated ${generated} from the GeoNames dumps available at that time · build commit ${GITHUB_SHA}.
+          Transformations (scripts/build-geography.py, scripts/geography_catalog.py): selected populated places (feature class P,
+          excluding abandoned/destroyed/historical) and administrative areas (A: ADM1–ADM5, ADMD); kept name, alternate
+          names for search, admin-1/admin-2 names, IANA time zone, population and coordinates; normalised search keys;
+          split into per-country JSON shards. No personal data is added. GeoNames does not warrant accuracy.
+          MD
+          sed -i 's/^          //' bundle/geography/ATTRIBUTION.md
           tar -czf geography.tar.gz -C bundle geography geography-stats.json
-          sum=$(sha256sum geography.tar.gz | cut -d' ' -f1); bytes=$(stat -c %s geography.tar.gz)
-          url="https://github.com/${{ github.repository }}/releases/download/$tag/geography.tar.gz"
-          jq -n --arg v "$tag" --arg u "$url" --arg s "$sum" --argjson b "$bytes" --arg c "${{ github.sha }}" \
-            --slurpfile st geography-stats.json \
-            '{version:$v,url:$u,sha256:$s,bytes:$b,builtFromCommit:$c,source:"geonames:world (CC BY 4.0)",countries:$st[0].countries,places:$st[0].places}' > geography.lock.json
-          cat geography.lock.json
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-      - name: Publish release asset
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"; echo "generated=$generated" >> "$GITHUB_OUTPUT"
+      - name: Privacy and content scan of the bundle
+        run: |
+          set -e
+          bad=$(tar -tzf geography.tar.gz | grep -vE '^(geography/|geography-stats\.json$)' || true)
+          [ -z "$bad" ] || { echo "unexpected paths in bundle"; exit 1; }
+          other=$(tar -tzf geography.tar.gz | grep -vE '/$|\.json$|ATTRIBUTION\.md$|SOURCE\.txt$' || true)
+          [ -z "$other" ] || { echo "unexpected file types in bundle"; exit 1; }
+          if [ -n "$PRIVATE_PATTERNS" ]; then
+            mkdir -p scan && tar -xzf geography.tar.gz -C scan
+            printf '%s\n' "$PRIVATE_PATTERNS" | sed 's/||/\n/g' | sed '/^$/d' > /tmp/pp.txt
+            if grep -rlEf /tmp/pp.txt scan >/dev/null; then echo "private pattern found in bundle (values not printed)"; exit 1; fi
+            rm -f /tmp/pp.txt; echo "private-pattern scan: clean"
+          else echo "::warning::PRIVATE_PATTERNS secret not set: private-pattern scan skipped"; fi
+      - name: Lock file (with rollback pointer)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="${{ steps.pkg.outputs.tag }}"
           gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --prerelease --title "Geography catalog $tag" \
-            --notes "GeoNames world catalog (CC BY 4.0) for Astralis AI. Pin it by committing the attached geography.lock.json."
-          gh release upload "$tag" geography.tar.gz geography.lock.json --clobber
-      - name: Summary
-        run: |
+            --notes "GeoNames world catalog for Astralis AI. Contains data from GeoNames (geonames.org), CC BY 4.0. See ATTRIBUTION.md inside the bundle."
+          gh release upload "$tag" geography.tar.gz --clobber
+          asset=$(gh api "repos/${{ github.repository }}/releases/tags/$tag" --jq '.assets[] | select(.name=="geography.tar.gz") | .id')
+          prev=$(git show HEAD:geography.lock.json 2>/dev/null | jq -r '.version // empty' || true)
+          sum=$(sha256sum geography.tar.gz | cut -d' ' -f1); bytes=$(stat -c %s geography.tar.gz)
+          jq -n --arg v "$tag" --arg u "https://github.com/${{ github.repository }}/releases/download/$tag/geography.tar.gz" \
+            --arg a "https://api.github.com/repos/${{ github.repository }}/releases/assets/$asset" --arg s "$sum" --argjson b "$bytes" \
+            --arg g "${{ steps.pkg.outputs.generated }}" --arg c "${{ github.sha }}" --arg p "$prev" --slurpfile st geography-stats.json \
+            '{version:$v,url:$u,assetApiUrl:$a,sha256:$s,bytes:$b,generatedAt:$g,builtFromCommit:$c,previousVersion:(if $p=="" then null else $p end),source:"GeoNames (geonames.org), CC BY 4.0",countries:$st[0].countries,places:$st[0].places}' > geography.lock.json
+          gh release upload "$tag" geography.lock.json --clobber
           { echo '## Geography catalog'; echo 'Commit this file as `geography.lock.json`:'; echo '```json'; cat geography.lock.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Install test (the bundle reinstalls byte-identically)
+        run: |
+          mkdir -p t && cp geography.lock.json t/ && cd t
+          python3 - <<'PY'
+          import json; l=json.load(open('geography.lock.json')); l['url']='file://'+__import__('os').path.abspath('../geography.tar.gz'); json.dump(l,open('geography.lock.json','w'))
+          PY
+          python3 ../scripts/fetch-geography-release.py && diff -rq public/geography ../bundle/geography && echo "install: byte-identical"

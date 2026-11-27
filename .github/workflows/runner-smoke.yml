@@ -1,6 +1,6 @@
 name: Runner smoke
+# Manual only (private repo minutes): Actions → Runner smoke → Run workflow.
 on:
-  pull_request:
   workflow_dispatch:
 permissions:
   contents: read
