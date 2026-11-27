@@ -5,7 +5,7 @@ import ChartWheel from './components/ChartWheel';
 import Checkout, {RecoverReport} from './components/Checkout';
 import {matchPreview, type MatchResult} from '../lib/match-preview.mjs';
 import {shareCardSvg} from '../lib/share-card.mjs';
-import {interpretDimensions} from '../lib/interpretation.mjs';
+import {relationshipStory} from '../lib/relationship-story.mjs';
 import {buildPremiumPreview} from '../lib/premium-preview.mjs';
 import {brand, catalog} from '../config/product';
 import {validateBirth, type BirthInput} from '../lib/birth-input.mjs';
@@ -16,7 +16,7 @@ const RELS: Relationship[] = ['partner', 'crush', 'friendship'];
 const DIMS = ['emotional', 'communication', 'attraction', 'stability', 'growth'] as const;
 const copy = {
   es: {
-    nav: 'Cosmic Match', heroKicker: 'Cosmic Match · Astrología con astronomía real', lead: 'Descubre la conexión simbólica entre dos cartas natales calculadas con la posición real de los planetas en el momento y lugar exactos de cada nacimiento.',
+    nav: 'Cosmic Match', heroKicker: 'Cosmic Match · Astrología con astronomía real', lead: 'Descubre qué podría unirlos, dónde podrían surgir diferencias y cómo explorar su conexión a través de una lectura astrológica personalizada.',
     start: 'Descubrir nuestra conexión', demo: 'Probar con datos ficticios', pillars: [['Astronomía real', 'Sol, Luna, planetas, Ascendente y casas calculados para la fecha, hora y lugar exactos.'], ['Cinco dimensiones', 'Conexión emocional, comunicación, atracción, estabilidad y crecimiento, con evidencia trazable.'], ['Privado por diseño', 'Tus datos natales se procesan en tu navegador. No creamos cuentas ni guardamos tus respuestas.']],
     howTitle: 'Cómo funciona', how: [['Elige el tipo de vínculo', 'Pareja, crush o amistad.'], ['Ingresa ambos nacimientos', 'Fecha, hora (si la conoces) y lugar, con buscador mundial.'], ['Explora la sinastría', 'Puntuación, dimensiones, ruedas natales y aspectos entre ambos.']],
     plansTitle: 'Explora gratis. Profundiza cuando quieras.', free: 'Lectura gratuita', freeItems: ['Índice simbólico y cinco dimensiones', 'Ruedas natales y de sinastría', 'Tarjetas para compartir'], premium: 'Informe premium', premiumItems: ['Lectura personalizada por dimensión', 'Fortalezas, desafíos y preguntas', 'Actividades para compartir y PDF'], soon: 'Pagos aún no habilitados · vista previa disponible',
@@ -34,7 +34,7 @@ const copy = {
     pre1970: 'Nacimiento anterior a 1970: los husos horarios históricos pueden variar en algunas regiones; verifica la hora local.',
   },
   en: {
-    nav: 'Cosmic Match', heroKicker: 'Cosmic Match · Astrology with real astronomy', lead: 'Discover the symbolic connection between two birth charts calculated from the real planetary positions at each exact time and place of birth.',
+    nav: 'Cosmic Match', heroKicker: 'Cosmic Match · Astrology with real astronomy', lead: 'Discover what might bring you together, where differences could emerge, and how to explore your connection through a personalized astrological reading.',
     start: 'Discover our connection', demo: 'Try with fictional data', pillars: [['Real astronomy', 'Sun, Moon, planets, Ascendant and houses calculated for the exact date, time and place.'], ['Five dimensions', 'Emotional connection, communication, attraction, stability and growth, with traceable evidence.'], ['Private by design', 'Birth details are processed in your browser. No accounts, nothing stored.']],
     howTitle: 'How it works', how: [['Choose the connection', 'Partner, crush or friendship.'], ['Enter both births', 'Date, time (if known) and place, with worldwide search.'], ['Explore the synastry', 'Score, dimensions, natal wheels and cross aspects.']],
     plansTitle: 'Explore for free. Go deeper when you want.', free: 'Free reading', freeItems: ['Symbolic index and five dimensions', 'Natal and synastry wheels', 'Shareable cards'], premium: 'Premium report', premiumItems: ['Personalised reading per dimension', 'Strengths, challenges and questions', 'Shared activities and PDF'], soon: 'Payments not enabled yet · preview available',
@@ -169,9 +169,9 @@ export default function Home() {
   }
 
   const exact = result?.status === 'ok' ? result.result : null;
-  const reflection = exact ? interpretDimensions(exact.dimensions, lang) : null;
   const premium = useMemo(() => {if (!showPremium || !result) return null; try {return buildPremiumPreview(result, lang, rel);} catch {return null;}}, [showPremium, result, lang, rel]);
   const charts = result && (result.status === 'ok' || result.status === 'partial') ? result.charts : null;
+  const story = relationshipStory(charts, lang, rel, result?.status !== 'ok');
   const price = ((catalog.find(x => x.id === 'match-premium')?.priceCents ?? 999) / 100).toFixed(2);
 
   return <div className="app" ref={top}>
@@ -234,22 +234,21 @@ export default function Home() {
       {(result.status === 'ok' || result.status === 'partial') ? <>
         <section className="card result-hero">
           <p className="pill">{t.rel[rel]} · {names[0]} &amp; {names[1]}</p>
+          <h1>{es?'La historia de su conexión':'The story of your connection'}</h1><p className="story-intro">{story.intro}</p>
           {result.status === 'ok' ? <><ScoreRing value={exact!.index} label={t.scoreTitle}/><h2>{t.scoreTitle}</h2></>
             : <><ScoreRing value={result.indexRange ? Math.round((result.indexRange[0] + result.indexRange[1]) / 2) : null} label={t.partialTitle}/><h2>{t.partialTitle}: {result.indexRange?.join('–') ?? '—'}/100</h2><p className="notice">{t.partialNote}</p></>}
-          <DimensionChart t={t} dims={exact ? exact.dimensions : null} ranges={result.status === 'partial' ? result.dimensions : undefined}/>
+          <details><summary>{es?'Ver puntuaciones por dimensión':'See dimension scores'}</summary><DimensionChart t={t} dims={exact ? exact.dimensions : null} ranges={result.status === 'partial' ? result.dimensions : undefined}/></details>
           <small className="fine">{t.disclaimer}</small>
         </section>
-        {reflection && <section className="card"><h2>{t.themes}</h2>
-          {reflection.strength && <p><strong>{t.strength}: {reflection.strength.label}.</strong> {reflection.strength.question}</p>}
-          {reflection.challenge && <p><strong>{t.challenge}: {reflection.challenge.label}.</strong> {reflection.challenge.question}</p>}
-          {reflection.questions.length > 0 && <ul>{reflection.questions.map(q => <li key={q}>{q}</li>)}</ul>}
-          <small className="fine">{reflection.disclaimer}</small></section>}
-        {charts && <section className="card wheels">
+        <section className="card story-panel"><h2>{es?'Lo que los une':'What brings you together'}</h2>{story.strengths.length?story.strengths.map((item,i)=><article key={i}><h3>{item.topic}</h3><p>{item.text}</p><details><summary>{es?'¿En qué se basa?':'What is this based on?'}</summary><p>{item.evidence}</p></details></article>):<p>{es?'No hay afinidades específicas confirmadas en esta lectura.':'No specific affinities are confirmed in this reading.'}</p>}</section>
+        <section className="card story-panel"><h2>{es?'Donde podrían chocar':'Where you may clash'}</h2>{story.challenges.length?story.challenges.map((item,i)=><article key={i}><h3>{item.topic}</h3><p>{item.text}</p><p><strong>{es?'Qué pueden hacer:':'What you can do:'}</strong> {item.advice}</p><details><summary>{es?'¿En qué se basa?':'What is this based on?'}</summary><p>{item.evidence}</p></details></article>):<p>{es?'No hay tensiones específicas confirmadas en esta lectura.':'No specific tensions are confirmed in this reading.'}</p>}</section>
+        <section className="card"><h2>{es?'Un consejo para ambos':'A suggestion for both of you'}</h2><p>{story.advice}</p></section>
+        {charts && <details className="card wheels"><summary>{es?'Explorar cartas y detalles astrológicos':'Explore charts and astrological details'}</summary>
           <div className="tabs" role="tablist">{t.tabs.map((x, i) => <button key={x} type="button" role="tab" aria-selected={tab === i} aria-pressed={tab === i} onClick={() => setTab(i)}>{i === 0 ? x : i === 1 ? `${x} · ${names[0]}` : `${x} · ${names[1]}`}</button>)}</div>
           {tab === 0 && <ChartWheel es={es} title={`${t.tabs[0]}: ${names[0]} & ${names[1]}`} inner={charts[0]} outer={charts[1]} innerLabel={names[0]} outerLabel={names[1]}/>}
           {tab === 1 && <ChartWheel es={es} title={`${t.tabs[1]} · ${names[0]}`} inner={charts[0]}/>}
           {tab === 2 && <ChartWheel es={es} title={`${t.tabs[2]} · ${names[1]}`} inner={charts[1]}/>}
-        </section>}
+        </details>}
         {result.candidate && <section className="card candidate" aria-label="symbolic-0.2"><h2>{es ? 'Metodología experimental' : 'Experimental methodology'} · {result.candidate.version}: {result.candidate.index ?? '—'}/100</h2>
           <small className="fine">{es ? 'Solo para revisión interna. El índice oficial sigue siendo symbolic-0.1.' : 'Internal review only. The official index remains symbolic-0.1.'}</small>
           <DimensionChart t={t} dims={result.candidate.dimensions}/>
