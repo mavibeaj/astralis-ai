@@ -5,8 +5,8 @@ export {KB_VERSION, FORBIDDEN, ROMANTIC_WORDS} from './knowledge.mjs';
 import {natalEvidence} from './evidence.mjs';
 import {cosmicStory} from './narrative.mjs';
 /** Build the chaptered story from a matchPreview result ('ok' or 'partial'). */
-export function storyFromResult(result, {lang = 'es', names = ['A', 'B'], relationship = 'partner', premium = false, unknownTime = [false, false]} = {}) {
+export function storyFromResult(result, {lang = 'es', names = ['A', 'B'], relationship = 'partner', premium = false, unknownTime = [false, false], synastryOrbs} = {}) {
   if (!result?.charts) return null;
   const ev = result.charts.map((c, i) => natalEvidence(c, {unknownTime: unknownTime[i]}));
-  return {evidence: ev, ...cosmicStory(ev[0], ev[1], {lang, names, relationship, premium})};
+  return {evidence: ev, ...cosmicStory(ev[0], ev[1], {lang, names, relationship, premium, synastryOrbs})};
 }

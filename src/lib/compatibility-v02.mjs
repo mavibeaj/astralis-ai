@@ -22,6 +22,17 @@ const ORBS = {
 const RANK = ['node', 'outer', 'social', 'angle', 'personal', 'luminary'];
 const ANGLES = {conjunction: 0, sextile: 60, square: 90, trine: 120, opposition: 180};
 const BASE = {conjunction: 0.5, sextile: 0.6, trine: 1, square: -0.7, opposition: -0.5};
+// CTO block 3: symmetric polarities (easy and hard aspects of the same strength weigh the same; a
+// conjunction is mixed and contributes 0 to the sign of the index while still counting as evidence).
+const BASE_SYMMETRIC = {conjunction: 0, sextile: 0.6, trine: 1, square: -1, opposition: -0.6};
+const ORBS_SYNASTRY_CANDIDATE = {
+  luminary: {conjunction: 7, opposition: 7, trine: 6, square: 6, sextile: 4},
+  personal: {conjunction: 6, opposition: 6, trine: 5, square: 5, sextile: 3},
+  social: {conjunction: 5, opposition: 5, trine: 4, square: 4, sextile: 3},
+  angle: {conjunction: 5, opposition: 5, trine: 4, square: 4, sextile: 3},
+  outer: {conjunction: 4, opposition: 4, trine: 3, square: 3, sextile: 2},
+  node: {conjunction: 3, opposition: 3},
+};
 // Conjunctions involving restrictive/disruptive points read as challenging.
 const HARD_CONJ = new Set(['Saturn', 'Uranus', 'Pluto']);
 
@@ -57,7 +68,8 @@ export function pointsOf({chart, unknownTime = false}) {
 function aspect(pa, pb, x, y, P) {
   const cls = [CLASS[pa], CLASS[pb]].sort((a, b) => RANK.indexOf(b) - RANK.indexOf(a))[0];
   const nodePair = pa === 'NorthNode' || pb === 'NorthNode';
-  const orbs = nodePair ? ORBS.node : ORBS[cls];
+  const table = P.orbs === 'synastry-candidate' ? ORBS_SYNASTRY_CANDIDATE : ORBS;
+  const orbs = nodePair ? table.node : table[cls];
   const distance = angularDistance(x, y);
   let best = null;
   for (const [name, angle] of Object.entries(ANGLES)) {
@@ -67,9 +79,10 @@ function aspect(pa, pb, x, y, P) {
     if (deviation <= orb && (!best || deviation < best.deviation)) best = {name, deviation, orb};
   }
   if (!best) return null;
-  let polarity = BASE[best.name];
-  if (best.name === 'conjunction' && (HARD_CONJ.has(pa) || HARD_CONJ.has(pb))) polarity = P.hardConjunctionPolarity;
-  if (nodePair) polarity = best.name === 'opposition' && !P.nodeOppositionPositive ? 0 : Math.abs(polarity); // nodal contacts read as growth themes
+  const symmetric = P.polarity === 'symmetric';
+  let polarity = (symmetric ? BASE_SYMMETRIC : BASE)[best.name];
+  if (!symmetric && best.name === 'conjunction' && (HARD_CONJ.has(pa) || HARD_CONJ.has(pb))) polarity = P.hardConjunctionPolarity;
+  if (nodePair) polarity = symmetric ? 0 : best.name === 'opposition' && !P.nodeOppositionPositive ? 0 : Math.abs(polarity); // nodal contacts: growth themes (asymmetric) or evidence without sign (symmetric)
   const tightness = Math.cos((Math.PI / 2) * (best.deviation / best.orb));
   return {...best, distance, polarity, tightness};
 }
@@ -79,7 +92,14 @@ function aspect(pa, pb, x, y, P) {
  * @param b {chart, unknownTime}
  */
 // Parameters are experimental hypotheses (CTO C-04). Defaults reproduce the frozen candidate.
-export const DEFAULT_PARAMS = Object.freeze({saturation: 1.6, hardConjunctionPolarity: -0.3, nodeOppositionPositive: true});
+export const DEFAULT_PARAMS = Object.freeze({saturation: 1.6, hardConjunctionPolarity: -0.3, nodeOppositionPositive: true, polarity: 'asymmetric', orbs: 'natal', nodes: true, overlays: true, relationship: 'partner'});
+// Versioned, named parameter sets (CTO block 3). 'candidate' reproduces the frozen symbolic-0.2-candidate.
+export const PARAM_SETS = Object.freeze({
+  'candidate': DEFAULT_PARAMS,
+  'sym-a': Object.freeze({...DEFAULT_PARAMS, polarity: 'symmetric'}),
+  'sym-b': Object.freeze({...DEFAULT_PARAMS, polarity: 'symmetric', orbs: 'synastry-candidate'}),
+  'sym-c': Object.freeze({...DEFAULT_PARAMS, polarity: 'symmetric', orbs: 'synastry-candidate', overlays: false}),
+});
 export function compatibilityV02(a, b, params = {}) {
   const P = {...DEFAULT_PARAMS, ...params};
   const A = pointsOf(a), B = pointsOf(b);
@@ -87,8 +107,11 @@ export function compatibilityV02(a, b, params = {}) {
   const seen = new Set();
   // Cross aspects. Directional pairs (Sun_A–Moon_B and Moon_A–Sun_B) are distinct contacts; identical
   // unordered body pairs in the same direction are counted once.
+  const friendship = P.relationship === 'friendship';
   for (const [key, [dim, weight]] of Object.entries(PAIRS)) {
     const [x, y] = key.split('|');
+    if (!P.nodes && (x === 'NorthNode' || y === 'NorthNode')) continue;
+    if (friendship && dim === 'attraction') continue; // romantic attraction is not part of a friendship index
     for (const [pa, pb] of x === y ? [[x, y]] : [[x, y], [y, x]]) {
       const id = pa + '>' + pb;
       if (seen.has(id)) continue;
@@ -106,7 +129,7 @@ export function compatibilityV02(a, b, params = {}) {
   // Bidirectional whole-sign overlays (only when the receiving chart has a known time and coordinates).
   const overlays = {aInB: [], bInA: []};
   for (const [dir, src, dst] of [['aInB', a, b], ['bInA', b, a]]) {
-    const asc = !dst.unknownTime ? dst.chart?.angles?.ascendant : undefined;
+    const asc = !dst.unknownTime && P.overlays ? dst.chart?.angles?.ascendant : undefined;
     if (!valid(asc)) {overlays[dir] = null; continue;}
     for (const body of OVERLAY_SOURCES) {
       if (src.unknownTime && body === 'Moon') continue;
@@ -117,6 +140,7 @@ export function compatibilityV02(a, b, params = {}) {
       const rule = OVERLAYS[house];
       if (!rule) continue;
       const [dim, value] = rule;
+      if (friendship && dim === 'attraction') continue;
       dims[dim].sum += value;
       dims[dim].evidence.push({kind: 'overlay', direction: dir, body, house, contribution: value, tone: value >= 0 ? 'supportive' : 'challenging'});
     }
@@ -124,6 +148,7 @@ export function compatibilityV02(a, b, params = {}) {
   const dimensions = {};
   let weighted = 0, avail = 0;
   for (const [k, d] of Object.entries(dims)) {
+    if (friendship && k === 'attraction') {dimensions[k] = {score: null, status: 'excluded', evidenceCount: 0, coverage: 0, rawSum: 0, supportive: 0, challenging: 0, evidence: []}; continue;}
     const hasData = d.available > 0;
     const score = hasData ? Math.round(50 + 50 * Math.tanh(d.sum / P.saturation)) : null;
     // CTO: no evidence is 'insufficient evidence', not neutral compatibility (50 is only the mathematical midpoint).
@@ -133,9 +158,10 @@ export function compatibilityV02(a, b, params = {}) {
       supportive: r3(d.evidence.filter(e => e.contribution > 0).reduce((s, e) => s + e.contribution, 0)),
       challenging: r3(d.evidence.filter(e => e.contribution < 0).reduce((s, e) => s + e.contribution, 0)),
       evidence: d.evidence};
-    if (score !== null) {weighted += score * WEIGHTS[k]; avail += WEIGHTS[k];}
+    if (score !== null) {weighted += score * WEIGHTS[k]; avail += WEIGHTS[k];} // remaining weights renormalise automatically
   }
-  return {version: VERSION, experimental: true, index: avail ? Math.round(weighted / avail) : null, weightCoverage: avail / 100,
+  const paramSet = Object.entries(PARAM_SETS).find(([, v]) => Object.keys(DEFAULT_PARAMS).filter(k => k !== 'relationship').every(k => v[k] === P[k]))?.[0] ?? 'custom';
+  return {version: VERSION, paramSet, experimental: true, index: avail ? Math.round(weighted / avail) : null, weightCoverage: avail / (friendship ? 100 - WEIGHTS.attraction : 100),
     dimensions, overlays, houseSystem: 'whole-sign',
     dataCoverage: {timeKnown: [!a.unknownTime, !b.unknownTime], angles: ['Ascendant' in A, 'Ascendant' in B], points: [Object.keys(A).length, Object.keys(B).length]},
     disclaimer: 'Symbolic interpretation index (experimental candidate methodology). Not a probability, prediction or scientific assessment. 50 is the mathematical midpoint, not neutral compatibility; dimensions without contacts are marked insufficient evidence.', params: P};

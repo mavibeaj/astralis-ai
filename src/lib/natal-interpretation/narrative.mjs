@@ -226,7 +226,7 @@ const OUTER = new Set(['Uranus', 'Neptune', 'Pluto']);
 const PLANET_SET = new Set(['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']);
 // Cross aspects. With an unknown time, a contact counts only if proven for every instant of that
 // person's local birth day (both days when both times are unknown).
-function crossAspects(evA, evB) {
+function crossAspects(evA, evB, orbs) {
   const side = ev => {
     const win = ev.dayWindow, at = win ? sampler() : null, mid = win ? Math.floor((win.startMs + win.endMs) / 2) : 0;
     return Object.entries(ev.placements).filter(([k, p]) => k !== 'NorthNode' && (win ? PLANET_SET.has(k) : !p.stableOnly && p.lon !== undefined))
@@ -237,7 +237,7 @@ function crossAspects(evA, evB) {
     const ka = pa.k, kb = pb.k;
     if (OUTER.has(ka) && OUTER.has(kb)) continue;
     if (ka === kb && ka === 'Midheaven') continue;
-    const asp = natalAspects(ka === kb ? {[ka]: pa.lon, [kb + '\u0000']: pb.lon} : {[ka]: pa.lon, [kb]: pb.lon})[0];
+    const asp = natalAspects(ka === kb ? {[ka]: pa.lon, [kb + '\u0000']: pb.lon} : {[ka]: pa.lon, [kb]: pb.lon}, orbs)[0];
     if (!asp) continue;
     if ((pa.uncertain || pb.uncertain) && !aspectPersists(pa.probe, pb.probe, asp.type, asp.orb)) continue;
     const key = [ka, kb].sort().join('|');
@@ -327,10 +327,10 @@ function crossCard(c, {lang, names, relationship, evA, evB, premium = true}) {
 }
 const ELEMENTS_OF = sign => ['fire', 'earth', 'air', 'water'][sign % 4];
 
-export function coupleStory(evA, evB, {lang = 'es', names = ['A', 'B'], relationship = 'partner', premium = false} = {}) {
+export function coupleStory(evA, evB, {lang = 'es', names = ['A', 'B'], relationship = 'partner', premium = false, synastryOrbs} = {}) {
   FRIENDSHIP = relationship === 'friendship'; HOUSES = FRIENDSHIP ? HOUSES_FRIENDSHIP : HOUSES_ALL;
   const es = lang === 'es', E = ELEMENT_TEXT, sn = i => SIGN_NAMES[lang][i];
-  const cross = crossAspects(evA, evB);
+  const cross = crossAspects(evA, evB, synastryOrbs); // undefined → approved natal orbs
   const seen = new Set();
   const pick = tones => cross.filter(c => tones.includes(c.tone) && !seen.has(c.key) && (seen.add(c.key), true));
   const card = c => crossCard(c, {lang, names, relationship, evA, evB, premium});
@@ -431,10 +431,10 @@ export function coupleStory(evA, evB, {lang = 'es', names = ['A', 'B'], relation
 }
 
 /** Full chaptered reading. */
-export function cosmicStory(evA, evB, {lang = 'es', names = ['A', 'B'], relationship = 'partner', premium = false} = {}) {
+export function cosmicStory(evA, evB, {lang = 'es', names = ['A', 'B'], relationship = 'partner', premium = false, synastryOrbs} = {}) {
   const a = personReading(evA, {lang, name: names[0], premium, relationship});
   const b = personReading(evB, {lang, name: names[1], premium, relationship});
-  const couple = coupleStory(evA, evB, {lang, names, relationship, premium});
+  const couple = coupleStory(evA, evB, {lang, names, relationship, premium, synastryOrbs});
   return {version: NARRATIVE_VERSION, premium, people: [a, b], couple, words: a.words + b.words + couple.words,
     uncertainty: [...evA.uncertainty.map(u => 'A:' + u), ...evB.uncertainty.map(u => 'B:' + u)]};
 }

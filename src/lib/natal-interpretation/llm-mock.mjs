@@ -65,3 +65,39 @@ export function estimateCost(request, responseText, pricing = PLACEHOLDER_PRICIN
   const usd = inputTokens / 1e6 * pricing.inputUsdPerMillion + outputTokens / 1e6 * pricing.outputUsdPerMillion;
   return {inputTokens, outputTokens, usd: Math.round(usd * 1e5) / 1e5, placeholder: true};
 }
+
+// ---------- CTO block 3: budget for rewriting the joint chapters (3–8) ----------
+// Price tiers are HYPOTHETICAL planning inputs (USD per million tokens), not quotes from any provider.
+export const PRICE_TIERS = Object.freeze({
+  'tier-large (hypothetical)': {inputUsdPerMillion: 3, outputUsdPerMillion: 15},
+  'tier-medium (hypothetical)': {inputUsdPerMillion: 1, outputUsdPerMillion: 5},
+  'tier-small (hypothetical)': {inputUsdPerMillion: 0.25, outputUsdPerMillion: 1.25},
+});
+export const BUDGET = Object.freeze({targetUsd: 0.05, capUsd: 0.10});
+
+/** Prose of chapters 3–8 (joint story, affinities, intense, tensions, daily life, advice, closing). */
+export function jointChaptersText(story) {
+  const C = story.couple;
+  return [Object.values(C.bridges).join(' '), ...C.complement, ...C.story.map(x => x.text),
+    ...[...C.affinities, ...(C.intense ?? []), ...C.tensions].flatMap(c => [c.title, c.story, c.daily, c.benefit, c.tip, c.care, c.misunderstanding, c.needX, c.needY, c.action].filter(Boolean)),
+    ...C.daily.map(d => d.text), ...Object.values(C.advice).flat().filter(Boolean), C.closing].join(' ');
+}
+
+/**
+ * Plans one premium rewrite of chapters 3–8. Input = request (evidence) + the deterministic draft the model
+ * rewrites; output = the rewrite in citation JSON (+25%). Validation is deterministic (validateStoryResponse,
+ * no tokens). Worst case = every attempt used (1 + retries). If the worst case exceeds the cap, or the output
+ * would not fit maxOutputTokens, the plan falls back to the deterministic generator.
+ */
+export function planJointRewrite(request, story, {pricing = PRICE_TIERS['tier-large (hypothetical)'], retries = 1, retryRate = 0.2, maxOutputTokens = 6000, budget = BUDGET} = {}) {
+  const draft = jointChaptersText(story);
+  const inputTokens = Math.ceil((JSON.stringify(request).length + draft.length) / 4);
+  const outputTokens = Math.ceil(draft.length * 1.25 / 4);
+  const attempt = inputTokens / 1e6 * pricing.inputUsdPerMillion + outputTokens / 1e6 * pricing.outputUsdPerMillion;
+  const expectedUsd = attempt * (1 + retryRate * retries), worstUsd = attempt * (1 + retries);
+  const r = x => Math.round(x * 1e5) / 1e5;
+  const fits = outputTokens <= maxOutputTokens;
+  const mode = fits && worstUsd <= budget.capUsd ? 'llm' : 'deterministic';
+  return {scope: 'chapters 3–8', inputTokens, outputTokens, maxOutputTokens, attemptUsd: r(attempt), expectedUsd: r(expectedUsd), worstUsd: r(worstUsd),
+    withinTarget: expectedUsd <= budget.targetUsd, mode, reason: !fits ? 'output would exceed maxOutputTokens' : worstUsd > budget.capUsd ? 'worst case exceeds the USD cap' : 'within cap', placeholder: true};
+}
