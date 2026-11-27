@@ -2,6 +2,7 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
 import LocationPicker from './location-picker';
 import ChartWheel from './components/ChartWheel';
+import Checkout, {RecoverReport} from './components/Checkout';
 import {matchPreview, type MatchResult} from '../lib/match-preview.mjs';
 import {shareCardSvg} from '../lib/share-card.mjs';
 import {interpretDimensions} from '../lib/interpretation.mjs';
@@ -197,6 +198,7 @@ export default function Home() {
         <article className="card plan"><h3>{t.free}</h3><p className="price">USD 0</p><ul>{t.freeItems.map(x => <li key={x}>{x}</li>)}</ul><button type="button" className="primary" onClick={() => startNew()}>{t.start}</button></article>
         <article className="card plan featured"><h3>{t.premium}</h3><p className="price">USD {price}</p><ul>{t.premiumItems.map(x => <li key={x}>{x}</li>)}</ul><small>{t.soon}</small></article>
       </div></section>
+      <RecoverReport es={es}/>
     </main>}
 
     {view === 'form' && <main className="flow">
@@ -255,8 +257,9 @@ export default function Home() {
         </section>}
         <section className="card premium-panel">
           <div><h2>Cosmic Match Premium</h2><p>{es ? 'Explora las cinco dimensiones en profundidad con un informe personalizado.' : 'Explore all five dimensions in depth with a personalised report.'}</p></div>
-          <p className="price">USD {price}</p><small>{t.purchase}</small>
+          <p className="price">USD {price}</p><small>{es ? 'Pagos reales no habilitados: puedes probar el recorrido completo en modo simulación.' : 'Real payments not enabled: try the full journey in simulation mode.'}</small>
           <button type="button" className="primary" aria-expanded={showPremium} onClick={() => setShowPremium(v => !v)}>{showPremium ? t.premiumHide : t.premiumCta}</button>
+          <Checkout result={result} lang={lang} relationship={rel} onReady={() => setShowPremium(false)}/>
           {showPremium && (premium ? <div className="premium-demo"><p>{premium.summary}</p>{premium.themes.map(th => <article key={th.key}><h3>{th.label} · {th.score}/100</h3><p>{th.reflection}</p><p className="activity">{th.activity}</p></article>)}<small className="fine">{premium.limitations}</small></div> : <p>{es ? 'La demostración requiere una lectura completa (horas conocidas).' : 'The demo requires a complete reading (known times).'}</p>)}
         </section>
         {exact?.index != null && <section className="card share"><h2>{es ? 'Comparte tu resultado' : 'Share your result'}</h2><p className="fine">{es ? 'Las tarjetas muestran solo el índice: sin nombres, fechas ni lugares.' : 'Cards show only the index: no names, dates or places.'}</p>

@@ -186,3 +186,12 @@ fieldset.step-card { margin: 0; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } html { scroll-behavior: auto; } }
 /* Decorative layers never capture the pointer; only bodies are interactive. */
 .wheel .glyph, .wheel .cusp, .wheel .house-num, .wheel .aspect, .wheel .sign-glyph, .wheel .tick, .wheel .axis-label, .wheel .ring { pointer-events: none; }
+/* Checkout simulation */
+.sim-badge { display: inline-block; font-size: .78rem; letter-spacing: .06em; color: #20163f; background: var(--gold); border-radius: 999px; padding: .25rem .8rem; margin: .4rem 0 .8rem; }
+.order-box { border: 1px solid var(--gold-2); border-radius: 16px; padding: 16px; margin-top: 12px; }
+.order-box dl { display: grid; grid-template-columns: auto 1fr; gap: .3rem 1rem; } .order-box dd { margin: 0; }
+.outcomes { border: 1px dashed var(--line); border-radius: 12px; padding: .5rem 1rem; margin: .8rem 0; }
+.report-view { margin-top: 14px; } .report-view article { border-top: 1px solid var(--line); padding-top: .6rem; margin-top: .6rem; }
+.recovery code { font-size: 1.05rem; color: var(--gold); letter-spacing: .08em; }
+.recover .grow { flex: 1 1 220px; margin: 0; }
+.recover form { align-items: end; }

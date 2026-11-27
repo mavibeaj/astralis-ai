@@ -91,9 +91,28 @@ try {
     const download = page.waitForEvent('download');
     await page.getByRole('button', {name: 'Descargar tarjeta · 9:16'}).click();
     assert.match((await download).suggestedFilename(), /\.png$/);
+    // Checkout simulation: decline, retry, approve, report, download, recovery.
+    await page.getByRole('button', {name: 'Obtener informe premium (simulación)'}).click();
+    await page.locator('.order-box .sim-badge').waitFor();
+    await page.getByLabel('Rechazado').check();
+    await page.getByRole('button', {name: 'Confirmar pago simulado'}).click();
+    await page.getByText('Pago simulado rechazado', {exact: false}).waitFor();
+    assert.equal(await page.getByTestId('order-status').textContent(), 'failed');
+    await page.getByLabel('Aprobado').check();
+    await page.getByRole('button', {name: 'Confirmar pago simulado'}).click();
+    const code = await page.getByTestId('recovery-code').textContent({timeout: 15000});
+    assert.match(code, /^[A-Z0-9]{20}$/);
+    assert.equal(await page.locator('.report-view article').count(), 5);
+    const reportDl = page.waitForEvent('download');
+    await page.getByRole('button', {name: 'Descargar informe'}).click();
+    assert.match((await reportDl).suggestedFilename(), /^cosmic-match-premium-sim_ord_.*\.html$/);
+    if (w === 1280) await page.locator('.premium-panel').screenshot({path: 'browser-checkout-report.png'});
     await noOverflow(page);
     // Fictional data resynchronises the picker (no stale Peru selection).
     await page.getByRole('button', {name: 'Astralis AI'}).click();
+    await page.getByLabel('Código de recuperación').fill(code.toLowerCase());
+    await page.getByRole('button', {name: 'Recuperar'}).click();
+    await page.locator('.recover .report-view article').first().waitFor();
     await page.getByRole('button', {name: 'Probar con datos ficticios'}).click();
     await page.getByRole('heading', {name: 'Revisa los datos'}).waitFor();
     await page.getByRole('button', {name: 'Editar'}).first().click();
