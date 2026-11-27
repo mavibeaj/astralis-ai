@@ -5,8 +5,8 @@ import ChartWheel from './components/ChartWheel';
 import Checkout, {RecoverReport} from './components/Checkout';
 import {matchPreview, type MatchResult} from '../lib/match-preview.mjs';
 import {shareCardSvg} from '../lib/share-card.mjs';
-import {relationshipStory} from '../lib/relationship-story.mjs';
-import {buildPremiumPreview} from '../lib/premium-preview.mjs';
+import {storyFromResult} from '../lib/natal-interpretation/index.mjs';
+import StoryReading from './components/StoryReading';
 import {brand, catalog} from '../config/product';
 import {validateBirth, type BirthInput} from '../lib/birth-input.mjs';
 
@@ -169,9 +169,15 @@ export default function Home() {
   }
 
   const exact = result?.status === 'ok' ? result.result : null;
-  const premium = useMemo(() => {if (!showPremium || !result) return null; try {return buildPremiumPreview(result, lang, rel);} catch {return null;}}, [showPremium, result, lang, rel]);
   const charts = result && (result.status === 'ok' || result.status === 'partial') ? result.charts : null;
-  const story = relationshipStory(charts, lang, rel, result?.status !== 'ok');
+  const storyOpts = {lang, names, relationship: rel, unknownTime: [a.unknownTime, b.unknownTime] as [boolean, boolean]};
+  const story = useMemo(() => result && charts ? storyFromResult(result, {...storyOpts, premium: false}) : null, [result, lang, names[0], names[1], rel]); // eslint-disable-line react-hooks/exhaustive-deps
+  const premiumStory = useMemo(() => result && charts ? storyFromResult(result, {...storyOpts, premium: true}) : null, [result, lang, names[0], names[1], rel]); // eslint-disable-line react-hooks/exhaustive-deps
+  const candidatePanel = result && (result.status === 'ok' || result.status === 'partial') && result.candidate ? <section className="candidate" aria-label="symbolic-0.2"><h3>{es ? 'Metodología experimental' : 'Experimental methodology'} · {result.candidate.version}: {result.candidate.index ?? '—'}/100</h3>
+    <small className="fine">{es ? 'Solo para revisión interna. El índice oficial sigue siendo symbolic-0.1.' : 'Internal review only. The official index remains symbolic-0.1.'}</small>
+    <DimensionChart t={t} dims={result.candidate.dimensions}/>
+    {DIMS.map(k => {const d = result.candidate!.dimensions[k]; return <details key={k}><summary>{t.dims[k]}: +{d.supportive} / {d.challenging} · {es ? 'cobertura' : 'coverage'} {Math.round(d.coverage * 100)}%</summary><ul>{d.evidence.slice(0, 8).map((e, i) => <li key={i}>{e.kind === 'aspect' ? `${String(e.personA)} (A) ${String(e.aspect)} ${String(e.personB)} (B) · ${String(e.deviation)}°/${String(e.orb)}°` : `${String(e.body)} ${e.direction === 'aInB' ? 'A→B' : 'B→A'} ${es ? 'casa' : 'house'} ${String(e.house)}`} · {e.contribution > 0 ? '+' : ''}{e.contribution}</li>)}</ul></details>;})}
+  </section> : null;
   const price = ((catalog.find(x => x.id === 'match-premium')?.priceCents ?? 999) / 100).toFixed(2);
 
   return <div className="app" ref={top}>
@@ -232,39 +238,38 @@ export default function Home() {
 
     {view === 'result' && result && <main className="results">
       {(result.status === 'ok' || result.status === 'partial') ? <>
-        <section className="card result-hero">
-          <p className="pill">{t.rel[rel]} · {names[0]} &amp; {names[1]}</p>
-          <h1>{es?'La historia de su conexión':'The story of your connection'}</h1><p className="story-intro">{story.intro}</p>
-          {result.status === 'ok' ? <><ScoreRing value={exact!.index} label={t.scoreTitle}/><h2>{t.scoreTitle}</h2></>
-            : <><ScoreRing value={result.indexRange ? Math.round((result.indexRange[0] + result.indexRange[1]) / 2) : null} label={t.partialTitle}/><h2>{t.partialTitle}: {result.indexRange?.join('–') ?? '—'}/100</h2><p className="notice">{t.partialNote}</p></>}
-          <details><summary>{es?'Ver puntuaciones por dimensión':'See dimension scores'}</summary><DimensionChart t={t} dims={exact ? exact.dimensions : null} ranges={result.status === 'partial' ? result.dimensions : undefined}/></details>
-          <small className="fine">{t.disclaimer}</small>
-        </section>
-        <section className="card story-panel"><h2>{es?'Lo que los une':'What brings you together'}</h2>{story.strengths.length?story.strengths.map((item,i)=><article key={i}><h3>{item.topic}</h3><p>{item.text}</p><details><summary>{es?'¿En qué se basa?':'What is this based on?'}</summary><p>{item.evidence}</p></details></article>):<p>{es?'No hay afinidades específicas confirmadas en esta lectura.':'No specific affinities are confirmed in this reading.'}</p>}</section>
-        <section className="card story-panel"><h2>{es?'Donde podrían chocar':'Where you may clash'}</h2>{story.challenges.length?story.challenges.map((item,i)=><article key={i}><h3>{item.topic}</h3><p>{item.text}</p><p><strong>{es?'Qué pueden hacer:':'What you can do:'}</strong> {item.advice}</p><details><summary>{es?'¿En qué se basa?':'What is this based on?'}</summary><p>{item.evidence}</p></details></article>):<p>{es?'No hay tensiones específicas confirmadas en esta lectura.':'No specific tensions are confirmed in this reading.'}</p>}</section>
-        <section className="card"><h2>{es?'Un consejo para ambos':'A suggestion for both of you'}</h2><p>{story.advice}</p></section>
-        {charts && <details className="card wheels"><summary>{es?'Explorar cartas y detalles astrológicos':'Explore charts and astrological details'}</summary>
-          <div className="tabs" role="tablist">{t.tabs.map((x, i) => <button key={x} type="button" role="tab" aria-selected={tab === i} aria-pressed={tab === i} onClick={() => setTab(i)}>{i === 0 ? x : i === 1 ? `${x} · ${names[0]}` : `${x} · ${names[1]}`}</button>)}</div>
-          {tab === 0 && <ChartWheel es={es} title={`${t.tabs[0]}: ${names[0]} & ${names[1]}`} inner={charts[0]} outer={charts[1]} innerLabel={names[0]} outerLabel={names[1]}/>}
-          {tab === 1 && <ChartWheel es={es} title={`${t.tabs[1]} · ${names[0]}`} inner={charts[0]}/>}
-          {tab === 2 && <ChartWheel es={es} title={`${t.tabs[2]} · ${names[1]}`} inner={charts[1]}/>}
-        </details>}
-        {result.candidate && <section className="card candidate" aria-label="symbolic-0.2"><h2>{es ? 'Metodología experimental' : 'Experimental methodology'} · {result.candidate.version}: {result.candidate.index ?? '—'}/100</h2>
-          <small className="fine">{es ? 'Solo para revisión interna. El índice oficial sigue siendo symbolic-0.1.' : 'Internal review only. The official index remains symbolic-0.1.'}</small>
-          <DimensionChart t={t} dims={result.candidate.dimensions}/>
-          {DIMS.map(k => {const d = result.candidate!.dimensions[k]; return <details key={k}><summary>{t.dims[k]}: +{d.supportive} / {d.challenging} · {es ? 'cobertura' : 'coverage'} {Math.round(d.coverage * 100)}%</summary><ul>{d.evidence.slice(0, 8).map((e, i) => <li key={i}>{e.kind === 'aspect' ? `${String(e.personA)} (A) ${String(e.aspect)} ${String(e.personB)} (B) · ${String(e.deviation)}°/${String(e.orb)}°` : `${String(e.body)} ${e.direction === 'aInB' ? 'A→B' : 'B→A'} ${es ? 'casa' : 'house'} ${String(e.house)}`} · {e.contribution > 0 ? '+' : ''}{e.contribution}</li>)}</ul></details>;})}
-        </section>}
-        <section className="card premium-panel">
-          <div><h2>Cosmic Match Premium</h2><p>{es ? 'Explora las cinco dimensiones en profundidad con un informe personalizado.' : 'Explore all five dimensions in depth with a personalised report.'}</p></div>
-          <p className="price">USD {price}</p><small>{es ? 'Pagos reales no habilitados: puedes probar el recorrido completo en modo simulación.' : 'Real payments not enabled: try the full journey in simulation mode.'}</small>
-          <button type="button" className="primary" aria-expanded={showPremium} onClick={() => setShowPremium(v => !v)}>{showPremium ? t.premiumHide : t.premiumCta}</button>
-          <Checkout result={result} lang={lang} relationship={rel} onReady={() => setShowPremium(false)}/>
-          {showPremium && (premium ? <div className="premium-demo"><p>{premium.summary}</p>{premium.themes.map(th => <article key={th.key}><h3>{th.label} · {th.score}/100</h3><p>{th.reflection}</p><p className="activity">{th.activity}</p></article>)}<small className="fine">{premium.limitations}</small></div> : <p>{es ? 'La demostración requiere una lectura completa (horas conocidas).' : 'The demo requires a complete reading (known times).'}</p>)}
-        </section>
+        {story && <StoryReading story={story} lang={lang} names={names} relationship={rel} relLabel={t.rel[rel]}/>}
+        <details className="chapter" id="ch-9" open>
+          <summary><span className="ch-num">09</span><span className="ch-title">{es ? 'Informe premium' : 'Premium report'}</span></summary>
+          <div className="chapter-body premium-panel">
+            <p>{es ? 'La lectura gratuita ya les presenta a ambos y cuenta su historia. El informe premium la amplía: cada planeta y su casa, el equilibrio de elementos, todas las afinidades y diferencias con ejemplos cotidianos, cómo activan las casas del otro, y una versión imprimible con portada.' : 'The free reading already introduces you both and tells your story. The premium report expands it: every planet and its house, the balance of elements, all affinities and differences with everyday examples, how you activate each other\'s houses, and a printable edition with a cover.'}</p>
+            {premiumStory && <p className="fine">{es ? `Extensión estimada para su lectura: ~${Math.round(premiumStory.words / 100) * 100} palabras (la gratuita: ~${Math.round((story?.words ?? 0) / 100) * 100}). La extensión depende de la evidencia de sus cartas; no rellenamos contenido.` : `Estimated length for your reading: ~${Math.round(premiumStory.words / 100) * 100} words (free: ~${Math.round((story?.words ?? 0) / 100) * 100}). Length depends on the evidence in your charts; we do not pad content.`}</p>}
+            <p className="price">USD {price}</p><small>{es ? 'Pagos reales no habilitados: puedes probar el recorrido completo en modo simulación.' : 'Real payments not enabled: try the full journey in simulation mode.'}</small>
+            <button type="button" className="ghost" aria-expanded={showPremium} onClick={() => setShowPremium(v => !v)}>{showPremium ? t.premiumHide : t.premiumCta}</button>
+            {showPremium && premiumStory && <div className="premium-demo">{premiumStory.people[0].details.slice(0, 2).map(d => <p key={d.point}>{d.text}</p>)}{premiumStory.couple.overlays.slice(0, 1).map(o => <p key={o.id}>{o.text}</p>)}<small className="fine">{es ? 'Fragmento de la versión premium.' : 'Excerpt from the premium edition.'}</small></div>}
+            <Checkout result={result} lang={lang} relationship={rel} story={premiumStory} onReady={() => setShowPremium(false)}/>
+          </div>
+        </details>
         {exact?.index != null && <section className="card share"><h2>{es ? 'Comparte tu resultado' : 'Share your result'}</h2><p className="fine">{es ? 'Las tarjetas muestran solo el índice: sin nombres, fechas ni lugares.' : 'Cards show only the index: no names, dates or places.'}</p>
           <div className="cta-row">{(['story', 'portrait'] as const).map(f => <button key={f} type="button" className="ghost" onClick={() => {setShareError(false); void downloadCard(exact.index!, lang, f).catch(() => setShareError(true));}}>{t.share} · {f === 'story' ? '9:16' : '4:5'}</button>)}</div>
           {shareError && <p role="alert" className="error">{t.shareError}</p>}</section>}
-        <details className="card tech"><summary>{t.details}</summary><ul>{result.limitations.map(l => <li key={l}>{l}</li>)}</ul>{charts?.map((c, i) => <p key={i} className="fine">{names[i]} · UTC {c.utc}</p>)}</details>
+        <details className="chapter tech" id="ch-10">
+          <summary><span className="ch-num">10</span><span className="ch-title">{es ? 'Detalles técnicos y cartas natales' : 'Technical details and birth charts'}</span></summary>
+          <div className="chapter-body">
+            {result.status === 'ok' ? <><ScoreRing value={exact!.index} label={t.scoreTitle}/><h3>{t.scoreTitle}</h3></>
+              : <><ScoreRing value={result.indexRange ? Math.round((result.indexRange[0] + result.indexRange[1]) / 2) : null} label={t.partialTitle}/><h3>{t.partialTitle}: {result.indexRange?.join('–') ?? '—'}/100</h3><p className="notice">{t.partialNote}</p></>}
+            <DimensionChart t={t} dims={exact ? exact.dimensions : null} ranges={result.status === 'partial' ? result.dimensions : undefined}/>
+            {charts && <div className="wheels">
+              <div className="tabs" role="tablist">{t.tabs.map((x, i) => <button key={x} type="button" role="tab" aria-selected={tab === i} aria-pressed={tab === i} onClick={() => setTab(i)}>{i === 0 ? x : i === 1 ? `${x} · ${names[0]}` : `${x} · ${names[1]}`}</button>)}</div>
+              {tab === 0 && <ChartWheel es={es} title={`${t.tabs[0]}: ${names[0]} & ${names[1]}`} inner={charts[0]} outer={charts[1]} innerLabel={names[0]} outerLabel={names[1]}/>}
+              {tab === 1 && <ChartWheel es={es} title={`${t.tabs[1]} · ${names[0]}`} inner={charts[0]}/>}
+              {tab === 2 && <ChartWheel es={es} title={`${t.tabs[2]} · ${names[1]}`} inner={charts[1]}/>}
+            </div>}
+            {candidatePanel}
+            <h3>{es ? 'Limitaciones' : 'Limitations'}</h3><ul>{result.limitations.map(l => <li key={l}>{l}</li>)}</ul>{charts?.map((c, i) => <p key={i} className="fine">{names[i]} · UTC {c.utc}</p>)}
+            <small className="fine">{t.disclaimer}</small>
+          </div>
+        </details>
       </> : <section className="card"><p role="status" className="error">{t.cannot} ({result.status})</p></section>}
       <div className="nav-row"><button type="button" className="ghost" onClick={() => {setView('form'); setStep(3);}}>{t.edit}</button><button type="button" className="primary" onClick={() => startNew()}>{t.again}</button></div>
     </main>}
