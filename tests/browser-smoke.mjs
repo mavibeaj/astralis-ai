@@ -73,6 +73,11 @@ try {
     await page.getByRole('button', {name: 'Calcular nuestra conexión'}).click();
     await page.getByText('Calculando posiciones planetarias', {exact: false}).waitFor();
     await page.getByRole('heading', {name: 'Índice simbólico experimental'}).waitFor({timeout: 15000});
+    await page.getByRole('heading',{name:'La historia de su conexión'}).waitFor();
+    await page.getByRole('heading',{name:'Lo que los une'}).waitFor();
+    await page.getByRole('heading',{name:'Donde podrían chocar'}).waitFor();
+    assert.equal(await page.locator('details.wheels').getAttribute('open'),null);
+    await page.getByText('Explorar cartas y detalles astrológicos',{exact:true}).click();
     // Wheels come from engine data: synastry shows both charts' bodies, houses and aspects.
     const wheel = page.locator('figure.wheel');
     assert.ok(await wheel.locator('g.body').count() >= 20, 'synastry bodies');
@@ -125,6 +130,7 @@ try {
     await page.getByRole('button', {name: 'Continuar'}).click();
     await page.getByRole('button', {name: 'Calcular nuestra conexión'}).click();
     await page.getByRole('heading', {name: /Lectura parcial/}).waitFor({timeout: 15000});
+    await page.getByText('Explorar cartas y detalles astrológicos',{exact:true}).click();
     await page.getByRole('tab', {name: /Carta B/}).click();
     assert.equal(await page.locator('figure.wheel text.house-num').count(), 0);
     await noOverflow(page);

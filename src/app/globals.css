@@ -195,3 +195,5 @@ fieldset.step-card { margin: 0; }
 .recovery code { font-size: 1.05rem; color: var(--gold); letter-spacing: .08em; }
 .recover .grow { flex: 1 1 220px; margin: 0; }
 .recover form { align-items: end; }
+
+.story-intro{font-size:1.12rem;line-height:1.75;max-width:65ch;margin:1rem auto}.story-panel article{padding:1rem 0;border-bottom:1px solid rgba(180,156,220,.2)}.story-panel article:last-child{border:0}.story-panel h3{text-transform:capitalize}.story-panel details{margin:.65rem 0;font-size:.88rem}.wheels>summary{cursor:pointer;margin-bottom:1rem}
