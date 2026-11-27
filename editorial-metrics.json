@@ -1,13 +1,13 @@
 [
  {
   "label": "C01 Cartas similares (mismo elemento predominante) · pareja · ES",
-  "words": 1811,
+  "words": 1786,
   "personWords": [
    410,
    326
   ],
-  "specificity": 40.2,
-  "sharedAcrossCases": 24.3,
+  "specificity": 41,
+  "sharedAcrossCases": 23.8,
   "crossContacts": 40,
   "affinities": 2,
   "intense": 1,
@@ -26,13 +26,13 @@
  },
  {
   "label": "C02 Cartas contrastantes (elementos sin complementariedad) · pareja · ES",
-  "words": 1827,
+  "words": 1800,
   "personWords": [
    351,
    385
   ],
-  "specificity": 38.3,
-  "sharedAcrossCases": 22.4,
+  "specificity": 39,
+  "sharedAcrossCases": 21.9,
   "crossContacts": 44,
   "affinities": 2,
   "intense": 1,
@@ -51,13 +51,13 @@
  },
  {
   "label": "C03 Mismo signo solar, configuraciones distintas · crush · ES",
-  "words": 1780,
+  "words": 1756,
   "personWords": [
    400,
    346
   ],
-  "specificity": 38,
-  "sharedAcrossCases": 20.4,
+  "specificity": 38.7,
+  "sharedAcrossCases": 19.8,
   "crossContacts": 31,
   "affinities": 2,
   "intense": 1,
@@ -76,12 +76,12 @@
  },
  {
   "label": "C04 Horas conocidas · pareja · EN",
-  "words": 1638,
+  "words": 1614,
   "personWords": [
    349,
    355
   ],
-  "specificity": 37.4,
+  "specificity": 38.1,
   "sharedAcrossCases": 0,
   "crossContacts": 33,
   "affinities": 2,
@@ -101,13 +101,13 @@
  },
  {
   "label": "C05 Hora desconocida (persona A) · pareja · ES",
-  "words": 1784,
+  "words": 1764,
   "personWords": [
    393,
    386
   ],
-  "specificity": 35.5,
-  "sharedAcrossCases": 20.6,
+  "specificity": 36.2,
+  "sharedAcrossCases": 20,
   "crossContacts": 22,
   "affinities": 2,
   "intense": 1,
@@ -130,12 +130,12 @@
  },
  {
   "label": "C06 Ambas horas desconocidas · amistad · EN",
-  "words": 1641,
+  "words": 1617,
   "personWords": [
    330,
    365
   ],
-  "specificity": 40.8,
+  "specificity": 41.6,
   "sharedAcrossCases": 0,
   "crossContacts": 16,
   "affinities": 2,
@@ -163,13 +163,13 @@
  },
  {
   "label": "C07 Afinidades y tensiones simultáneas · pareja · ES",
-  "words": 1753,
+  "words": 1726,
   "personWords": [
    371,
    334
   ],
-  "specificity": 38.3,
-  "sharedAcrossCases": 19.6,
+  "specificity": 39,
+  "sharedAcrossCases": 19,
   "crossContacts": 36,
   "affinities": 2,
   "intense": 1,
@@ -188,13 +188,13 @@
  },
  {
   "label": "C08 Escasa evidencia (ambas horas desconocidas; menos contactos entre 300 parejas) · crush · ES",
-  "words": 1818,
+  "words": 1791,
   "personWords": [
    356,
    335
   ],
-  "specificity": 43.3,
-  "sharedAcrossCases": 18.3,
+  "specificity": 44.1,
+  "sharedAcrossCases": 17.6,
   "crossContacts": 8,
   "affinities": 2,
   "intense": 1,
@@ -221,13 +221,13 @@
  },
  {
   "label": "C09 Amistad · ES",
-  "words": 1680,
+  "words": 1658,
   "personWords": [
    417,
    359
   ],
-  "specificity": 32.7,
-  "sharedAcrossCases": 18.7,
+  "specificity": 33.3,
+  "sharedAcrossCases": 18.1,
   "crossContacts": 40,
   "affinities": 2,
   "intense": 1,
@@ -246,12 +246,12 @@
  },
  {
   "label": "C10 Crush · EN",
-  "words": 1730,
+  "words": 1708,
   "personWords": [
    358,
    396
   ],
-  "specificity": 37.6,
+  "specificity": 38.3,
   "sharedAcrossCases": 0,
   "crossContacts": 36,
   "affinities": 2,

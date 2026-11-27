@@ -92,7 +92,7 @@ export default function StoryReading({story, lang, names, relLabel}: {story: Cos
     {sec(4, C.tensions.length ? <div className="card-grid">{C.tensions.map(c => <Card key={c.id} c={c} story={story} lang={lang} names={names}/>)}</div> : <p>{t.noTen}</p>)}
     {sec(5, <div className="area-grid">{C.daily.map(d => <article key={d.key} className={`area ${d.status} ${d.tone}`}><h4>{d.title}</h4><span className="badge">{t.status[d.status]}</span><p>{d.text}</p></article>)}</div>, false)}
     {sec(6, <div className="advice">
-      <dl><dt>{t.comm}</dt><dd>{C.advice.communication}</dd><dt>{t.needs}</dt><dd>{C.advice.needs}</dd><dt>{t.diff}</dt><dd>{C.advice.differences}</dd><dt>{t.shared}</dt><dd>{C.advice.shared}</dd><dt>{t.space}</dt><dd>{C.advice.space}</dd></dl>
+      <dl><dt>{t.comm}</dt><dd>{C.advice.communication}</dd><dt>{t.needs}</dt><dd>{C.advice.needs}</dd><dt>{t.diff}</dt><dd>{C.advice.differences}</dd><dt>{t.shared}</dt><dd>{C.advice.shared}</dd>{C.advice.space && <><dt>{t.space}</dt><dd>{C.advice.space}</dd></>}</dl>
       <h4>{t.questions}</h4><ul>{C.advice.questions.map(q => <li key={q}>{q}</li>)}</ul>
       <h4>{t.activities}</h4><ul>{C.advice.activities.map(q => <li key={q}>{q}</li>)}</ul>
     </div>, false)}
