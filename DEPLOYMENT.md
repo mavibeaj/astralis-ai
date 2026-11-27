@@ -90,7 +90,7 @@ The catalog is distributed as an asset of a **release of this same repository**.
 ## Block 4: CI cost controls for a private repository (P0-C)
 Measured while the repo was public (so $0): the `preview` job averaged **69 min per run (max 122)** waiting for Cloudflare. That was ~85% of all job time. Foundation CI used 3 jobs × rounding-up.
 Changes (critical checks are unchanged):
-- **Foundation CI:** a single job instead of three, since GitHub rounds each job up to the minute. Superseded runs are cancelled. npm and Playwright are cached. Docs-only pushes skip CI. The site artefact is uploaded only on failure (it was 13.5 MB per run, 1.1 GB in total). Evidence is kept 5 days.
+- **Foundation CI:** a single job instead of three, since GitHub rounds each job up to the minute. Superseded runs are cancelled. npm and Playwright are cached. CI is skipped when a PR (or a push to the integration branch) changes only docs. GitHub evaluates path filters on the whole PR diff, so a docs commit inside a PR that also changes code still runs CI. The site artefact is uploaded only on failure (it was 13.5 MB per run, 1.1 GB in total). Evidence is kept 5 days.
 - **Preview verify:** only on PRs labelled `verify-preview`. At most 40 min of polling at 60 s. Superseded runs are cancelled.
 - **Runner smoke:** manual only.
 - **World import:** concurrency cancel, npm cache, shorter retention.
