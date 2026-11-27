@@ -6,7 +6,7 @@ export type DailyArea = { key: string; title: string; status: 'evidence' | 'sign
 export type CoupleStory = { version: string; kb: string; title: string; story: { text: string; evidence: string[] }[]; affinities: CrossCard[]; tensions: CrossCard[]; daily: DailyArea[]; advice: { communication: string; needs: string; differences: string; shared: string; space: string; questions: string[]; activities: string[] }; closing: string; overlays: { id: string; text: string }[]; crossAspectIds: string[]; words: number };
 export type CosmicStory = { version: string; premium: boolean; people: [PersonReading, PersonReading]; couple: CoupleStory; words: number; uncertainty: string[]; evidence: any[] };
 export function storyFromResult(result: MatchResult, opts: { lang?: 'es' | 'en'; names?: [string, string]; relationship?: 'partner' | 'crush' | 'friendship'; premium?: boolean; unknownTime?: [boolean, boolean] }): CosmicStory | null;
-export function natalEvidence(chart: any, opts?: { unknownTime?: boolean; moonSamples?: number[] | null }): any;
+export function natalEvidence(chart: any, opts?: { unknownTime?: boolean }): any;
 export function evidenceIds(ev: any): Set<string>;
 export function cosmicStory(a: any, b: any, opts?: any): Omit<CosmicStory, 'evidence'>;
 export const KB_VERSION: string; export const NARRATIVE_VERSION: string; export const EVIDENCE_VERSION: string;

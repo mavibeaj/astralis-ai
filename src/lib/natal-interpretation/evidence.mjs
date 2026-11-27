@@ -1,6 +1,8 @@
 // LAYER A — deterministic natal evidence. Pure function of engine output; no text, no AI.
 // Every fact carries a stable id so narrative claims can be traced back to it.
 import {signElement, signModality, ASPECT_TONE, KB_VERSION} from './knowledge.mjs';
+import {sampler, stableSign, aspectPersists} from './uncertainty.mjs';
+import {meanNode} from '../houses.mjs';
 
 export const EVIDENCE_VERSION = 'natal-evidence-0.1';
 const PLANETS = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto'];
@@ -35,11 +37,14 @@ export function natalAspects(points) {
       const deviation = Math.abs(dist - angle);
       if (deviation <= orb) {
         const [x, y] = [a, b].sort();
-        const hardConj = type === 'conjunction' && ['Saturn', 'Pluto', 'Mars', 'Uranus'].some(p => p === a || p === b) && !(a === 'Mars' && b === 'Venus') && !(a === 'Venus' && b === 'Mars');
-        const tone = ASPECT_TONE[type] === 'blend' ? (hardConj ? 'tense' : 'harmonious') : ASPECT_TONE[type];
+        // CTO C-02: conjunctions are blended — always 'mixed'. Mars/Saturn/Uranus/Pluto only shift the
+        // emphasis toward intensity; they never make the contact intrinsically negative.
+        const intense = type === 'conjunction' && ['Saturn', 'Pluto', 'Mars', 'Uranus'].some(p => p === a || p === b) && !([a, b].includes('Mars') && [a, b].includes('Venus'));
+        const tone = ASPECT_TONE[type] === 'blend' ? 'mixed' : ASPECT_TONE[type];
+        const emphasis = tone === 'mixed' ? (intense ? 'intense' : 'constructive') : undefined;
         // Priority: personal points first, tighter orbs first.
         const priority = (PERSONAL.has(a) ? 2 : 0) + (PERSONAL.has(b) ? 2 : 0) + (1 - deviation / orb);
-        out.push({id: `aspect:${x}-${y}:${type}`, a: x, b: y, type, deviation: Math.round(deviation * 100) / 100, orb, tone, priority: Math.round(priority * 1000) / 1000});
+        out.push({id: `aspect:${x}-${y}:${type}`, a: x, b: y, type, deviation: Math.round(deviation * 100) / 100, orb, tone, ...(emphasis ? {emphasis} : {}), priority: Math.round(priority * 1000) / 1000});
         break;
       }
     }
@@ -49,9 +54,10 @@ export function natalAspects(points) {
 
 /**
  * @param chart engine chart (longitudes, angles?, placidus?, nodes?)
- * @param opts {unknownTime, moonSamples?: number[]} moonSamples = Moon longitudes across the birth day
+ * @param opts {unknownTime} — with an unknown time, chart.dayWindow ({startMs,endMs}) must be present;
+ *   only facts proven for the whole local day are kept (uncertainty.mjs).
  */
-export function natalEvidence(chart, {unknownTime = false, moonSamples = null} = {}) {
+export function natalEvidence(chart, {unknownTime = false} = {}) {
   const timeKnown = !unknownTime && !!chart?.angles;
   const cusps = timeKnown ? (chart.placidus?.cusps ?? null) : null;
   const houseSystem = timeKnown ? (chart.placidus ? 'placidus' : 'whole-sign') : null;
@@ -61,45 +67,68 @@ export function natalEvidence(chart, {unknownTime = false, moonSamples = null} =
     return ((signOf(lon) - signOf(chart.angles.ascendant) + 12) % 12) + 1;
   };
   const placements = {}, points = {}, facts = [], uncertainty = [];
+  const win = !timeKnown ? chart?.dayWindow ?? null : null;
+  const at = win ? sampler() : null;
+  let moon = {status: 'unknown'};
   for (const p of PLANETS) {
+    if (win) {
+      const st = stableSign(at, p, win.startMs, win.endMs);
+      if (!st.stable) {
+        if (p === 'Moon') moon = {status: 'uncertain', signs: st.signs};
+        uncertainty.push(p === 'Moon' ? 'moon-sign' : 'sign:' + p);
+        continue;
+      }
+      // Sign-level only: no degree or house claims without a birth time.
+      placements[p] = {sign: st.sign, element: signElement(st.sign), modality: signModality(st.sign), stableOnly: true};
+      if (p === 'Moon') moon = {status: 'stable-sign', signs: [st.sign], method: 'speed-bound'};
+      points[p] = at(Math.floor((win.startMs + win.endMs) / 2), p);
+      continue;
+    }
     const lon = chart?.longitudes?.[p];
     if (!valid(lon)) continue;
     placements[p] = placement(lon, houseOf(lon));
     points[p] = lon;
+    if (p === 'Moon') moon = {status: 'exact'};
   }
-  // Moon with unknown time: keep only if the sign is the same all day (stable), never its degree.
-  let moon = {status: valid(chart?.longitudes?.Moon) ? (timeKnown ? 'exact' : 'given') : 'unknown'};
-  if (!placements.Moon && moonSamples?.length) {
-    const signs = [...new Set(moonSamples.map(signOf))];
-    if (signs.length === 1) {moon = {status: 'stable-sign', signs}; placements.Moon = {sign: signs[0], element: signElement(signs[0]), modality: signModality(signs[0]), stableOnly: true};}
-    else {moon = {status: 'uncertain', signs}; uncertainty.push('moon-sign');}
-  }
+  if (!win && !timeKnown && !placements.Moon) uncertainty.push('moon-sign');
   if (timeKnown) {
     placements.Ascendant = placement(chart.angles.ascendant, 1); points.Ascendant = chart.angles.ascendant;
     placements.Midheaven = placement(chart.angles.midheaven, 10); points.Midheaven = chart.angles.midheaven;
   } else uncertainty.push('ascendant', 'midheaven', 'houses');
-  if (valid(chart?.nodes?.north)) placements.NorthNode = placement(chart.nodes.north, houseOf(chart.nodes.north));
+  if (win) {
+    // The mean node moves linearly (monotonically), so equal signs at both ends of the day prove stability.
+    const s0 = signOf(meanNode(new Date(win.startMs))), s1 = signOf(meanNode(new Date(win.endMs)));
+    if (s0 === s1) placements.NorthNode = {sign: s0, element: signElement(s0), modality: signModality(s0), stableOnly: true};
+    else uncertainty.push('sign:NorthNode');
+  } else if (valid(chart?.nodes?.north)) placements.NorthNode = placement(chart.nodes.north, houseOf(chart.nodes.north));
   for (const [k, v] of Object.entries(placements)) facts.push({id: `placement:${k}`, point: k, ...v});
 
-  const aspects = natalAspects(points);
+  let aspects = natalAspects(points);
+  // Unknown time: keep an aspect only if it is proven within orb for the whole local day.
+  if (win) aspects = aspects.filter(a => aspectPersists({at, body: a.a, a: win.startMs, b: win.endMs}, {at, body: a.b, a: win.startMs, b: win.endMs}, a.type, a.orb, {same: true}));
   // Elements & modalities (Moon counts if exact or stable sign).
   const elements = {fire: 0, earth: 0, air: 0, water: 0}, modalities = {cardinal: 0, fixed: 0, mutable: 0};
   for (const [k, w] of Object.entries(WEIGHT)) {const pl = placements[k]; if (!pl) continue; elements[pl.element] += w; modalities[pl.modality] += w;}
-  const rank = o => Object.entries(o).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  // CTO C-03: report ties and coverage; "less represented in the available chart", never a deficit.
   const totalW = Object.values(elements).reduce((s, x) => s + x, 0);
-  const dominantElement = rank(elements)[0][0], dominantModality = rank(modalities)[0][0];
+  const maxW = Object.values(WEIGHT).reduce((s, x) => s + x, 0);
+  const tops = o => {const m = Math.max(...Object.values(o)); return m > 0 ? Object.keys(o).filter(k => o[k] === m) : [];};
+  // Ties are broken by the Sun's element/modality when it is among the tied (documented editorial rule), else fixed order.
+  const pickTop = (list, sunValue) => list.length ? (list.includes(sunValue) ? sunValue : list[0]) : null;
+  const dominantElements = tops(elements), dominantModalities = tops(modalities);
+  const dominantElement = pickTop(dominantElements, placements.Sun?.element), dominantModality = pickTop(dominantModalities, placements.Sun?.modality);
   const personalInElement = e => ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Ascendant'].some(k => placements[k]?.element === e);
-  const lackingElements = Object.keys(elements).filter(e => !personalInElement(e) && elements[e] <= 1);
+  const lessRepresented = totalW ? Object.keys(elements).filter(e => !personalInElement(e) && elements[e] <= 1) : [];
   // Stelliums: 3+ planets in one sign (exact positions only).
   const bySign = {};
-  for (const p of PLANETS) if (placements[p] && !placements[p].stableOnly) (bySign[placements[p].sign] ??= []).push(p);
+  for (const p of PLANETS) if (placements[p]) (bySign[placements[p].sign] ??= []).push(p);
   const stelliums = Object.entries(bySign).filter(([, ps]) => ps.length >= 3).map(([sign, ps]) => ({id: `stellium:${sign}`, sign: Number(sign), bodies: ps}));
   const byHouse = {};
   for (const p of PLANETS) if (placements[p]?.house) (byHouse[placements[p].house] ??= []).push(p);
   const emphasisHouses = Object.entries(byHouse).filter(([, ps]) => ps.length >= 3).map(([h, ps]) => ({id: `house-emphasis:${h}`, house: Number(h), bodies: ps}));
-  return {version: EVIDENCE_VERSION, kb: KB_VERSION, timeKnown, houseSystem, moon, placements, aspects, facts,
-    balance: {elements, modalities, totalWeight: totalW, dominantElement, dominantModality, lackingElements,
-      ids: [`element:${dominantElement}`, `modality:${dominantModality}`, ...lackingElements.map(e => `lacking:${e}`)]},
+  return {version: EVIDENCE_VERSION, kb: KB_VERSION, timeKnown, houseSystem, dayWindow: win, moon, placements, aspects, facts,
+    balance: {elements, modalities, totalWeight: totalW, coverage: Math.round(totalW / maxW * 100) / 100, dominantElement, dominantElements, dominantModality, dominantModalities, lessRepresented,
+      ids: [...(dominantElement ? [`element:${dominantElement}`] : []), ...(dominantModality ? [`modality:${dominantModality}`] : []), ...lessRepresented.map(e => `less:${e}`)]},
     stelliums, emphasisHouses, uncertainty};
 }
 

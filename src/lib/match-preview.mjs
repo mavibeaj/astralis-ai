@@ -3,6 +3,7 @@ import {natalAngles,validCoordinates,wholeSignHouse} from './natal-angles.mjs';
 import {calculateUtc} from './ephemeris.mjs';
 import {compatibility} from './compatibility.mjs';
 import {compatibilityV02} from './compatibility-v02.mjs';
+import {localDayWindow} from './natal-interpretation/uncertainty.mjs';
 import {placidusCusps,houseOf,meanNode} from './houses.mjs';
 import {validateBirth} from './birth-input.mjs';
 // Unknown-time results are sampled estimates, not guaranteed mathematical bounds.
@@ -12,13 +13,13 @@ export function matchPreview(a,b,cutoff,options={}){
  const samples=[];
  for(const p of [a,b]){
   const times=p.unknownTime?['00:00','06:00','12:00','18:00','23:59']:[p.time];
-  const charts=[],moonSamples=[];
+  const charts=[];
   for(const time of times){
    let resolved;try{resolved=resolveLocalTime(p.date,time,p.zone)}catch{return {status:'invalid-time-zone-or-date'}}
    if(resolved.status!=='unique'&&!p.unknownTime)return {status:resolved.status};
    for(const instant of resolved.candidates){
     const chart=calculateUtc(new Date(instant));
-    if(p.unknownTime){moonSamples.push(chart.longitudes.Moon);delete chart.longitudes.Moon;}
+    if(p.unknownTime)delete chart.longitudes.Moon;
     if(!p.unknownTime&&validCoordinates(p.latitude,p.longitude)){
      chart.angles=natalAngles(new Date(instant),p.latitude,p.longitude);
      if(chart.angles)chart.houses=Object.fromEntries(Object.entries(chart.longitudes).map(([key,lon])=>[key,wholeSignHouse(lon,chart.angles.ascendant)]));
@@ -31,7 +32,9 @@ export function matchPreview(a,b,cutoff,options={}){
   }
   if(!charts.length)return {status:'nonexistent'};
   // Unknown time: Moon longitudes across the birth day, so interpretation can test sign stability.
-  if(p.unknownTime)for(const c of charts)c.moonSamples=moonSamples;
+  // Unknown time: the full set of UTC instants of the local birth day (DST-aware), so the
+  // interpretation layer can prove which facts hold all day (see natal-interpretation/uncertainty.mjs).
+  if(p.unknownTime){const dayWindow=localDayWindow(p.date,p.zone);for(const c of charts)c.dayWindow=dayWindow;}
   samples.push(charts);
  }
  const limitations=['Local angles and houses require known time and coordinates; Placidus omitted beyond 66° latitude; mean lunar node only; no Chiron.','Planet longitudes and ASC/MC cross-checked against Swiss Ephemeris (Moshier) within 20 arcseconds for 12 reference cases; broader validation pending.','Symbolic score, not a scientific probability.'];

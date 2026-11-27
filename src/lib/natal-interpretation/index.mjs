@@ -7,6 +7,6 @@ import {cosmicStory} from './narrative.mjs';
 /** Build the chaptered story from a matchPreview result ('ok' or 'partial'). */
 export function storyFromResult(result, {lang = 'es', names = ['A', 'B'], relationship = 'partner', premium = false, unknownTime = [false, false]} = {}) {
   if (!result?.charts) return null;
-  const ev = result.charts.map((c, i) => natalEvidence(c, {unknownTime: unknownTime[i], moonSamples: c.moonSamples ?? null}));
+  const ev = result.charts.map((c, i) => natalEvidence(c, {unknownTime: unknownTime[i]}));
   return {evidence: ev, ...cosmicStory(ev[0], ev[1], {lang, names, relationship, premium})};
 }

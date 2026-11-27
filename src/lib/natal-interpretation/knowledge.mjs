@@ -143,7 +143,7 @@ export const CROSS_PAIRS = {
   'Moon|Venus': {area: 'affection', es: {
     title: ['Ternura que se reconoce', 'Dos lenguajes de cariño'],
     easy: {story: 'la forma de dar cariño de uno coincide con lo que el otro necesita recibir', daily: 'los detalles cotidianos pueden sentirse acertados y fáciles de valorar', benefit: 'un afecto que se siente recíproco', tip: 'sigan nombrando los gestos que les hacen sentir queridos'},
-    hard: {story: 'ambos pueden querer de verdad, pero expresar y recibir el cariño de maneras diferentes', daily: 'un gesto pensado con cariño puede pasar desapercibido para el otro', misunderstanding: 'creer que el otro no se esfuerza cuando solo usa otro lenguaje', needX: '{X} puede necesitar preguntar cómo prefiere recibir cariño {Y}', needY: '{Y} puede necesitar reconocer los gestos de {X} aunque no sean los que esperaba', action: 'hagan una lista breve de tres gestos que cada uno valora y compártanla'}},
+    hard: {story: 'ambos pueden querer de verdad, pero expresar y recibir el cariño de maneras diferentes', daily: 'un gesto pensado con cariño puede pasar desapercibido para el otro', misunderstanding: 'creer que el otro no se esfuerza cuando solo usa otro lenguaje', needX: '{X} puede necesitar preguntarle a {Y} cómo prefiere recibir cariño', needY: '{Y} puede necesitar reconocer los gestos de {X} aunque no sean los que esperaba', action: 'hagan una lista breve de tres gestos que cada uno valora y compártanla'}},
     en: {title: ['Tenderness that is recognised', 'Two love languages'],
     easy: {story: 'one person\'s way of giving affection matches what the other needs to receive', daily: 'everyday details may feel right and easy to appreciate', benefit: 'affection that feels reciprocal', tip: 'keep naming the gestures that make you feel loved'},
     hard: {story: 'both may care deeply, yet express and receive affection differently', daily: 'a caring gesture may go unnoticed by the other', misunderstanding: 'thinking the other does not try when they simply use another language', needX: '{X} may need to ask how {Y} prefers to receive affection', needY: '{Y} may need to recognise {X}\'s gestures even if unexpected', action: 'each write a short list of three gestures you value and share it'}}},
@@ -226,7 +226,7 @@ export const DAILY_AREAS = [
   {key: 'emotional', pairs: ['Moon|Sun', 'Moon|Moon', 'Moon|Venus'], compare: 'Moon', es: 'Conexión emocional', en: 'Emotional connection'},
   {key: 'communication', pairs: ['Mercury|Mercury', 'Mercury|Moon', 'Mercury|Sun'], compare: 'Mercury', es: 'Comunicación', en: 'Communication'},
   {key: 'affection', pairs: ['Moon|Venus', 'Venus|Venus', 'Sun|Venus'], compare: 'Venus', es: 'Afectividad', en: 'Affection'},
-  {key: 'intimacy', romantic: true, pairs: ['Mars|Venus', 'Ascendant|Venus', 'Ascendant|Mars'], compare: 'Mars', es: 'Atracción e intimidad', en: 'Attraction and intimacy'},
+  {key: 'intimacy', romantic: true, pairs: ['Mars|Venus', 'Ascendant|Venus', 'Ascendant|Mars'], compare: 'Mars', es: 'Química simbólica', en: 'Symbolic chemistry'},
   {key: 'trust', pairs: ['Moon|Saturn', 'Saturn|Venus'], compare: null, es: 'Confianza y límites', en: 'Trust and boundaries'},
   {key: 'conflict', pairs: ['Mars|Mars', 'Mars|Sun', 'Mars|Moon'], compare: 'Mars', es: 'Gestión de desacuerdos', en: 'Handling disagreements'},
   {key: 'living', pairs: ['Moon|Moon', 'Moon|Saturn'], compare: 'Moon', es: 'Convivencia', en: 'Living together'},

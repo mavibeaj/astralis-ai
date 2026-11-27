@@ -16,11 +16,12 @@ const allText = s => [...s.people.flatMap(p => [...p.sections.map(x => x.text), 
 const chartAt = (utc, lat, lon) => {const t = new Date(utc); return {longitudes: calculateUtc(t).longitudes, angles: natalAngles(t, lat, lon)};};
 
 test('LLM layer is prepared but disabled', () => assert.equal(LLM_ENABLED, false));
-test('individual reading: 11 sections per person, each with evidence', () => {
+test('individual reading: 12 sections per person (incl. inner contrasts), each with evidence', () => {
   const s = run(A, B);
   for (const p of s.people) {
-    assert.equal(p.sections.length, 11);
-    for (const sec of p.sections) {assert.ok(sec.text.length > 20, sec.key); assert.ok(sec.evidence.length > 0 || sec.key === 'emotional', sec.key);}
+    assert.equal(p.sections.length, 12);
+    assert.deepEqual(p.sections.map(x => x.key).slice(8, 10), ['challenges', 'contrasts']);
+    for (const sec of p.sections) {assert.ok(sec.text.length > 20, sec.key); assert.ok(sec.evidence.length > 0 || ['emotional', 'contrasts'].includes(sec.key), sec.key);}
   }
 });
 test('different people get different readings (no paragraph reuse with swapped names)', () => {
@@ -48,7 +49,7 @@ test('affinities and tensions only come from real cross aspects, never padded', 
   const s = run(A, B, {premium: true});
   const cross = new Set(s.couple.crossAspectIds);
   assert.ok(s.couple.affinities.length > 0 && s.couple.tensions.length > 0, 'this pair has both');
-  for (const c of s.couple.affinities) assert.equal(c.tone, 'harmonious');
+  for (const c of s.couple.affinities) assert.ok(['harmonious', 'mixed'].includes(c.tone));
   for (const c of s.couple.tensions) assert.equal(c.tone, 'tense');
   assert.ok([...s.couple.affinities, ...s.couple.tensions].every(c => cross.has(c.id)));
 });
@@ -136,4 +137,65 @@ test('LLM response validation rejects invented evidence, forbidden claims, score
   assert.throws(() => validateStoryResponse(bad('Su compatibilidad es 87/100.'), req));
   assert.throws(() => validateStoryResponse(bad('Hay una fuerte atracción romántica.'), req));
   assert.throws(() => validateStoryResponse('not json', req));
+});
+test('unknown time: a planet that changes sign that day is not interpreted', () => {
+  // Mercury entered Pisces on 1993-02-25 (sampled day must show a sign change for some body).
+  let found = null;
+  for (let d = 1; d <= 60 && !found; d++) {
+    const date = new Date(Date.UTC(1993, 0, d)).toISOString().slice(0, 10);
+    const s = run({...A, date, unknownTime: true, time: ''}, B);
+    const u = s.evidence[0].uncertainty.find(x => x.startsWith('sign:'));
+    if (u) found = {s, body: u.slice(5)};
+  }
+  assert.ok(found, 'expected a sign change for some planet in Jan–Feb 1993');
+  assert.ok(!found.s.evidence[0].placements[found.body]);
+  assert.ok(!found.s.evidence[0].aspects.some(a => a.a === found.body || a.b === found.body));
+});
+test('unknown time on a Sun ingress day: no Sun claims, no crash', () => {
+  // Sun enters Aries around 20 March each year.
+  const s = run({...A, date: '1993-03-20', unknownTime: true, time: ''}, B);
+  if (!s.evidence[0].placements.Sun) {
+    assert.match(s.people[0].sections[0].text, /cambió de signo/);
+    assert.ok(!/Sol en/.test(s.people[0].sections.map(x => x.text).join(' ')));
+  } else assert.ok(s.evidence[0].placements.Sun.lonRange);
+});
+
+test('C-02: conjunctions are mixed, never purely tense; intense ones also name a constructive side', () => {
+  for (const date of ['1990-03-06', '1990-07-14', '1985-11-02', '2001-05-20']) {
+    const s = run({...A, date}, B, {premium: true});
+    for (const ev of s.evidence) for (const a of ev.aspects.filter(x => x.type === 'conjunction')) assert.equal(a.tone, 'mixed', a.id);
+    assert.ok(!s.couple.tensions.some(c => c.id.endsWith(':conjunction')));
+    for (const c of s.couple.affinities.filter(c => c.tone === 'mixed')) assert.ok(c.care, 'mixed card has a care note');
+  }
+  const t = run(A, B).people[0].sections.find(x => x.key === 'contrasts').text;
+  assert.match(t, /determinación|coherencia/);
+});
+test('C-03: least-represented wording, no deficit language, coverage and ties reported', () => {
+  const s = run(A, B, {premium: true});
+  const all = allText(s);
+  assert.ok(!/carenc(ia|e) de|le falta|lacks |lacking/i.test(all.replace('sin que indique una carencia', '')), 'no deficit wording');
+  for (const ev of s.evidence) {assert.ok(ev.balance.coverage > 0 && ev.balance.coverage <= 1); assert.ok(Array.isArray(ev.balance.dominantElements));}
+  const unknown = run({...A, unknownTime: true, time: ''}, B).evidence[0].balance;
+  assert.ok(unknown.coverage < 1, 'coverage reflects missing ASC/MC');
+});
+test('C-06: chapter bridges, complementarity block, specific generic cards', () => {
+  const s = run(A, B, {premium: true});
+  for (const k of [1, 2, 3, 6, 7]) assert.ok(s.couple.bridges[k].length > 20, 'bridge ' + k);
+  assert.match(s.couple.bridges[1], /Ana/); assert.match(s.couple.bridges[2], /Leo/);
+  assert.ok(s.couple.complement.length >= 1);
+  const generic = [...s.couple.affinities, ...s.couple.tensions].filter(c => !/^(Dos|Lo que|Identidad|Una|Conversaciones|Palabras|Entre|Ternura|Gustos|Energía|Estructura|Cuidar|Seguridad|Un cariño|Afecto|Se impulsan|Optimismo|Agrado|Magnetismo|Cuando)/.test(c.title));
+  for (const c of generic) assert.match(c.story, /\(en [A-ZÁÉÍÓÚ]/, 'generic card names the signs: ' + c.story);
+  for (const d of s.couple.daily.filter(d => d.status === 'signs')) assert.match(d.text, /lectura secundaria por signos/);
+});
+test('Gate 4: symbolic chemistry area for partners, absent for friendship', () => {
+  assert.ok(run(A, B).couple.daily.some(d => d.title === 'Química simbólica'));
+  assert.ok(!run(A, B, {relationship: 'friendship'}).couple.daily.some(d => d.key === 'intimacy'));
+});
+test('C-01: every unknown-time placement is sign-level only and proven for the local day', () => {
+  for (const date of ['1993-01-05', '1993-03-20', '1994-07-11', '1996-12-21']) {
+    const s = run({...A, date, unknownTime: true, time: ''}, B);
+    const ev = s.evidence[0];
+    assert.ok(ev.dayWindow && ev.dayWindow.hours >= 23);
+    for (const [k, p] of Object.entries(ev.placements)) assert.ok(p.stableOnly && p.degree === undefined && p.house === undefined, k);
+  }
 });
