@@ -1,0 +1,53 @@
+name: Preview verify
+# Waits for the Cloudflare Pages check on the PR head commit, then validates the published preview:
+# real world catalog + the full Playwright journey (desktop and mobile) against the live URL.
+on:
+  pull_request:
+permissions:
+  contents: read
+  checks: read
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Wait for Cloudflare Pages preview
+        id: cf
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          for i in $(seq 1 80); do
+            out=$(gh api "repos/${{ github.repository }}/commits/$SHA/check-runs" --jq '.check_runs[] | select(.name=="Cloudflare Pages") | [.status, (.conclusion // ""), (.output.summary // "")] | @tsv' | head -1)
+            status=$(printf '%s' "$out" | cut -f1); conclusion=$(printf '%s' "$out" | cut -f2)
+            if [ "$status" = completed ]; then
+              [ "$conclusion" = success ] || { echo "Cloudflare build: $conclusion"; exit 1; }
+              url=$(printf '%s' "$out" | grep -o "https://[a-z0-9-]*\.astralis-ai\.pages\.dev" | head -1)
+              echo "url=$url" >> "$GITHUB_OUTPUT"; echo "Preview: $url"; exit 0
+            fi
+            sleep 30
+          done
+          echo "Timed out waiting for Cloudflare Pages"; exit 1
+      - name: Verify published catalog
+        run: node scripts/verify-live-catalog.mjs "${{ steps.cf.outputs.url }}"
+      - name: Playwright journey against the preview
+        env:
+          BASE_URL: ${{ steps.cf.outputs.url }}
+          SCREENSHOT_PREFIX: preview
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+          node tests/browser-smoke.mjs
+      - name: Summary
+        if: always()
+        run: echo "Preview ${{ steps.cf.outputs.url }} for ${{ github.event.pull_request.head.sha }}" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: preview-screenshots
+          path: preview-*.png
+          retention-days: 14
