@@ -3,8 +3,11 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
-const server = spawn('python3', ['-m', 'http.server', '4173', '--bind', '127.0.0.1', '--directory', 'out'], {stdio: 'ignore'});
-const URL_ = 'http://127.0.0.1:4173';
+// BASE_URL runs the same journey against a published preview (e.g. Cloudflare Pages).
+const REMOTE = process.env.BASE_URL?.replace(/\/$/, '');
+const server = REMOTE ? null : spawn('python3', ['-m', 'http.server', '4173', '--bind', '127.0.0.1', '--directory', 'out'], {stdio: 'ignore'});
+const URL_ = REMOTE ?? 'http://127.0.0.1:4173';
+const SHOTS = process.env.SCREENSHOT_PREFIX ?? 'browser';
 let browser;
 
 async function open(viewport, routeCatalog404 = false) {
@@ -36,7 +39,7 @@ try {
     const {page, errors} = await open(viewport);
     await page.getByRole('heading', {level: 1}).waitFor();
     await noOverflow(page);
-    await page.screenshot({path: `browser-${w}-landing.png`, fullPage: true});
+    await page.screenshot({path: `${SHOTS}-${w}-landing.png`, fullPage: true});
     // Step 0: relationship
     await page.getByRole('button', {name: 'Descubrir nuestra conexión'}).first().click();
     await page.getByRole('radio', {name: 'Pareja'}).click();
@@ -56,7 +59,7 @@ try {
     const a = await pickPlace(page, 'a', 'Perú', 'Chiclayo', /Chiclayo.*Lambayeque/i);
     assert.equal(a.zone, 'America/Lima');
     assert.ok(a.lat > -6.9 && a.lat < -6.6 && a.lon > -80 && a.lon < -79.7, `Chiclayo ${a.lat},${a.lon}`);
-    await page.screenshot({path: `browser-${w}-form.png`, fullPage: true});
+    await page.screenshot({path: `${SHOTS}-${w}-form.png`, fullPage: true});
     await page.getByRole('button', {name: 'Continuar'}).click();
     // Step 2: international search
     await page.getByLabel('Fecha de nacimiento').fill('1995-09-22');
@@ -82,9 +85,9 @@ try {
     await page.locator('#ch-1 .basis summary').first().click();
     await page.locator('#ch-1 .basis li').first().waitFor();
     for (const n of [6, 7]) await page.locator(`#ch-${n} > summary`).click(); // collapsed by default
-    for (let n = 1; n <= 8; n++) await page.locator(`#ch-${n}`).screenshot({path: `browser-${w}-ch${n}.png`});
-    await page.locator('.story-cover').screenshot({path: `browser-${w}-cover.png`});
-    await page.screenshot({path: `browser-${w}-results.png`, fullPage: true});
+    for (let n = 1; n <= 8; n++) await page.locator(`#ch-${n}`).screenshot({path: `${SHOTS}-${w}-ch${n}.png`});
+    await page.locator('.story-cover').screenshot({path: `${SHOTS}-${w}-cover.png`});
+    await page.screenshot({path: `${SHOTS}-${w}-results.png`, fullPage: true});
     // Technical chapter on demand: wheels come from engine data.
     await page.locator('#ch-10 > summary').click();
     await page.getByRole('heading', {name: 'Índice simbólico experimental'}).waitFor();
@@ -94,7 +97,7 @@ try {
     assert.ok(await wheel.locator('text.house-num').count() === 12, 'houses');
     await wheel.locator('g.body circle.body-bg').nth(2).hover();
     await wheel.locator('g.tooltip').waitFor();
-    await wheel.screenshot({path: `browser-${w}-synastry-wheel.png`});
+    await wheel.screenshot({path: `${SHOTS}-${w}-synastry-wheel.png`});
     await page.getByRole('tab', {name: /Carta A/}).click();
     await page.getByText('Grados exactos').click();
     assert.ok(await page.locator('.positions td').count() >= 13);
@@ -157,6 +160,6 @@ try {
   await page.getByLabel('Lugar de nacimiento').fill('Chiclayo, Lambayeque, Perú');
   await page.locator('#a-zone').fill('America/Lima');
   assert.deepEqual(errors, []);
-  await page.screenshot({path: 'browser-catalog-unavailable.png', fullPage: true});
+  await page.screenshot({path: `${SHOTS}-catalog-unavailable.png`, fullPage: true});
   await page.close();
-} finally {await browser?.close(); server.kill();}
+} finally {await browser?.close(); server?.kill();}

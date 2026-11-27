@@ -44,3 +44,18 @@ Language rules:
 3. Whether a Moon with a stable sign (unknown time) may feed cross comparisons by sign. Currently it is used for the individual reading and the Moon-vs-Moon comparison, but never for aspects.
 4. Expanding the cross-pair library: Sun–Mars, Mercury–Venus, Venus–Neptune, Moon–Pluto, Sun–Uranus, Node contacts, MC contacts.
 5. Additional natal pair readings, and sign-in-house combinations for premium.
+
+## CTO review — 2026-11-27 (T-09)
+- Approve natal orb table as editorial convention, not empirical relationship measurement. Keep separate from scoring orbs and expose version.
+- Keep outer–outer out of main reading. Conjunctions are mixed/blended by default; Mars/Saturn/Uranus/Pluto can emphasize a tension but must also describe constructive possibilities. Do not infer actual behavior or treat an aspect as intrinsically harmful.
+- Approve element weights provisionally. Replace "lacking" in user text with "less represented in the available chart"; report ties and coverage, never infer a personal deficit from missing time. No arbitrary dominant element for empty evidence.
+- Unknown time: stable sign may support a sign-level reading only. Endpoints alone do not guarantee stability or a persistent aspect. Use resolved valid local-day intervals, cover all feasible UTC instants including DST folds/gaps; adaptive sampling with defensible bounds or explicitly label as sampled, suppress uncertain facts. Do not claim full-day certainty from a noon chart. Moon sign comparisons permitted only with stable-sign evidence; no exact degree or lunar aspect without verified interval. Guard all missing placements including Sun/Mercury/Venus/Mars; never dereference an absent placement on an ingress day.
+- Daily-life sign comparisons may remain if clearly distinguished from confirmed cross contacts; otherwise use a question to discuss. No claims about actual finances, family plans or trustworthiness.
+- Keep narrative first and score in optional technical chapter, not percentage probability. Keep 0.2 experimental. No changes to astronomical engine or scoring from this review.
+- Version KB independently; new prose is symbolic, original, bilingual, and evidence-linked. Structural validation does not prove semantic grounding; require editorial review before LLM activation.
+
+## Implementation of CTO decisions (Claude, PR #9)
+- **Unknown time:** see TD-21 and `src/lib/natal-interpretation/uncertainty.mjs`. Facts are proven for every instant of the local day, or suppressed. The narrative never dereferences a missing placement.
+- **Conjunctions:** tone `mixed`, with emphasis constructive or intense (Mars/Saturn/Uranus/Pluto, except Mars–Venus). The text always names both the constructive and the demanding side.
+- **Balance:** `lessRepresented`, `coverage`, `dominantElements` (ties). User text says "elemento menos representado en la carta disponible … sin que eso indique una carencia".
+- **Sign comparison** in daily areas is labelled "lectura secundaria por signos, sin un aspecto que la confirme". Areas without evidence end with an open question.

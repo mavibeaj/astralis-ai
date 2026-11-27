@@ -1,0 +1,96 @@
+name: Preview verify
+# Waits for the Cloudflare Pages check on the PR head commit, then validates the published preview:
+# real world catalog + the full Playwright journey (desktop and mobile) against the live URL.
+on:
+  pull_request:
+permissions:
+  contents: read
+  checks: read
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 130
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Wait for Cloudflare Pages preview
+        id: cf
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # Cloudflare builds serially; each world build is long, so allow up to 2 h in the queue.
+          for i in $(seq 1 240); do
+            out=$(gh api "repos/${{ github.repository }}/commits/$SHA/check-runs" --jq '.check_runs[] | select(.name=="Cloudflare Pages") | [.status, (.conclusion // ""), (.output.summary // "")] | @tsv' | head -1)
+            status=$(printf '%s' "$out" | cut -f1); conclusion=$(printf '%s' "$out" | cut -f2)
+            if [ "$status" = completed ]; then
+              [ "$conclusion" = success ] || { echo "Cloudflare build: $conclusion"; exit 1; }
+              url=$(printf '%s' "$out" | grep -o "https://[a-z0-9-]*\.astralis-ai\.pages\.dev" | head -1)
+              echo "url=$url" >> "$GITHUB_OUTPUT"; echo "Preview: $url"; exit 0
+            fi
+            sleep 30
+          done
+          echo "Timed out waiting for Cloudflare Pages"; exit 1
+      - name: Verify published catalog
+        run: node scripts/verify-live-catalog.mjs "${{ steps.cf.outputs.url }}"
+      - name: Playwright journey against the preview
+        env:
+          BASE_URL: ${{ steps.cf.outputs.url }}
+          SCREENSHOT_PREFIX: preview
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+          node tests/browser-smoke.mjs
+      - name: Summary
+        if: always()
+        run: echo "Preview ${{ steps.cf.outputs.url }} for ${{ github.event.pull_request.head.sha }}" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: preview-screenshots
+          path: preview-*.png
+          retention-days: 14
+
+  # Immediate evidence: the newest preview Cloudflare has already finished for this PR's history
+  # (PR commits newest → oldest, then the base branch head). Reported as such, not as the head preview.
+  latest-successful-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Find newest successful Cloudflare preview
+        id: cf
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shas=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits?per_page=100" --jq '[.[].sha] | reverse | .[]'; echo "${{ github.event.pull_request.base.sha }}")
+          for sha in $shas; do
+            out=$(gh api "repos/${{ github.repository }}/commits/$sha/check-runs" --jq '.check_runs[] | select(.name=="Cloudflare Pages" and .conclusion=="success") | .output.summary | gsub("\n"; " ")' | head -1)
+            url=$(printf '%s' "$out" | grep -o "https://[a-z0-9-]*\.astralis-ai\.pages\.dev" | head -1)
+            if [ -n "$url" ]; then echo "url=$url" >> "$GITHUB_OUTPUT"; echo "sha=$sha" >> "$GITHUB_OUTPUT"; echo "Newest successful preview: $url (commit $sha)"; exit 0; fi
+          done
+          echo "No successful Cloudflare preview found"; exit 1
+      - name: Verify published catalog
+        run: node scripts/verify-live-catalog.mjs "${{ steps.cf.outputs.url }}"
+      - name: Playwright journey against that preview
+        env:
+          BASE_URL: ${{ steps.cf.outputs.url }}
+          SCREENSHOT_PREFIX: latest-preview
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+          node tests/browser-smoke.mjs
+      - name: Summary
+        if: always()
+        run: echo "Newest successful preview ${{ steps.cf.outputs.url }} = commit ${{ steps.cf.outputs.sha }}" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: latest-preview-screenshots
+          path: latest-preview-*.png
+          retention-days: 14

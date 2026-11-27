@@ -9,12 +9,13 @@ Integration branch: `feature/cosmic-match-foundation` @ 85e9d3e (PR #2 merged). 
 | #5 | `claude/product-experience` | claude/geo-p0-fix (+ merges #4) | Block 5 redesign + SVG wheels | ✓ |
 | #6 | `claude/checkout-sim` | claude/product-experience | Block 9 checkout simulation | ✓ |
 | #7 | `chatgpt/story-first` (ChatGPT) | claude/checkout-sim | Story-first results v1 | ✓ |
-| #8 | `claude/cosmic-story-v2` | chatgpt/story-first | Natal engine + 8-chapter Cosmic Story + chaptered premium report | see PR |
+| #8 | `claude/cosmic-story-v2` | chatgpt/story-first | Natal engine + 8-chapter Cosmic Story + chaptered premium report | ✓ |
+| #9 | `claude/beta-readiness` (includes `chatgpt/kb-expansion` decisions) | claude/cosmic-story-v2 | CTO changes C-01–C-06, calibration, editorial corpus, live preview verification, beta gates | see PR |
 
 | Module | Status | Evidence |
 |---|---|---|
 | Geography (GeoNames) | World catalog: 248 countries, 5.66 M places, 5,995 shards, max 204 KB gzip; deploy build fails without real data | PR #3, QA_REPORT |
-| Live Cloudflare site | **Not verified** (no access). Owner must confirm build command `npm run build`, output `out` | DEPLOYMENT.md |
+| Live Cloudflare site | **Verified by CI** on preview a42a12a1 (commit f7b0885): world catalog (248 countries, 5.66 M places) and full journey. Head-commit preview queued | QA_REPORT.md |
 | Local time → UTC | 1900+, pre-1970 flagged | validated vs zoneinfo |
 | Planets, ASC/MC, Placidus, mean node | Validated vs Swiss Ephemeris (≤17.5″ planets, ≤0.1″ angles/cusps) | tests/ephemeris-reference, houses |
 | Chiron, true node, topocentric | Not implemented | TD-05 |
@@ -25,3 +26,5 @@ Integration branch: `feature/cosmic-match-foundation` @ 85e9d3e (PR #2 merged). 
 | Payments | Disabled. No provider selected | MONETIZATION.md |
 | Supabase / RLS | Draft SQL only, not executed | database/schema-draft.sql |
 | Virality (Block 7), Supabase (Block 8) | Not started (only pre-existing share cards) | — |
+
+**Milestone FOUNDER_BETA_READY:** NOT READY. Gate 5 (rubric scoring) is open. Gate 1 passes on a live preview, and the head-commit preview is pending. See FOUNDER_BETA_READINESS.md.

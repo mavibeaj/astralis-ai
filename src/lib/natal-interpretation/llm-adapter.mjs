@@ -3,6 +3,7 @@
 // and must return paragraphs that cite evidence ids. It cannot change scores or add aspects.
 import {FORBIDDEN, ROMANTIC_WORDS} from './knowledge.mjs';
 import {evidenceIds} from './evidence.mjs';
+import {checkGrounding} from './llm-mock.mjs';
 
 export const LLM_ENABLED = false;
 export const STORY_CHAPTERS = ['personA', 'personB', 'together', 'affinities', 'differences', 'daily', 'advice', 'closing'];
@@ -27,7 +28,7 @@ export function buildStoryRequest(evA, evB, {lang, relationship}) {
 }
 
 /** Validate a model response against the request. Throws on any violation. */
-export function validateStoryResponse(raw, request, names = ['A', 'B']) {
+export function validateStoryResponse(raw, request, names = ['A', 'B'], {semantic = true} = {}) {
   if (typeof raw !== 'string' || raw.length > 60000) throw new RangeError('Invalid response size');
   let v; try {v = JSON.parse(raw);} catch {throw new RangeError('Response is not JSON');}
   if (!v || !Array.isArray(v.chapters) || Object.keys(v).length !== 1) throw new RangeError('Unexpected shape');
@@ -41,6 +42,7 @@ export function validateStoryResponse(raw, request, names = ['A', 'B']) {
       if (FORBIDDEN.some(r => r.test(p.text))) throw new RangeError('Forbidden claim');
       if (/\b\d{1,3}\s*(\/\s*100|%)/.test(p.text)) throw new RangeError('Scores are not allowed in narrative');
       if (request.relationship === 'friendship' && ROMANTIC_WORDS.test(p.text)) throw new RangeError('Romantic content in friendship reading');
+      if (semantic) {const problems = checkGrounding(p.text, p.evidence, request, request.locale); if (problems.length) throw new RangeError('Not grounded in cited evidence: ' + problems.join('; '));}
     }
     out.push({key: ch.key, paragraphs: ch.paragraphs.map(p => ({text: p.text.trim().replace(/\bA\b/g, names[0]).replace(/\bB\b/g, names[1]), evidence: p.evidence}))});
   }

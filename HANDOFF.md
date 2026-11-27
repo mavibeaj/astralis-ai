@@ -1,6 +1,6 @@
 # Handoff: Claude → ChatGPT / founder (2026-11-27)
 
-**Latest delivery:** PR #8 `claude/cosmic-story-v2` (base `chatgpt/story-first`, #7). Individual natal readings, an 8-chapter story, and a chaptered premium report. Next prompt for ChatGPT: `PROMPT_FOR_CHATGPT.md`. Task board: `AGENT_TASK_BOARD.md`.
+**Latest delivery:** PR #9 `claude/beta-readiness` (base `claude/cosmic-story-v2`): CTO changes C-01–C-06, calibration, editorial corpus, live preview verification, beta-readiness tracker. Previous: PR #8 `claude/cosmic-story-v2` (base `chatgpt/story-first`, #7). Individual natal readings, an 8-chapter story, and a chaptered premium report. Next prompt for ChatGPT: `PROMPT_FOR_CHATGPT.md`. Task board: `AGENT_TASK_BOARD.md`.
 
 
 ## Merge order
@@ -19,7 +19,7 @@
 2. Redeploy, and look for this line in the build log: `✓ Geography gate: 248 countries …`
 3. If the build fails on time or memory (world import: about 12 min and 2.2 GB on GitHub runners), see NEXT_TASKS item 4.
 
-The live site has **not** been verified by any agent. Do not mark the P0 as resolved until the live URL shows the countries list and returns Chiclayo.
+Live geography was verified by CI on 27 Nov 2026 on Cloudflare preview https://a42a12a1.astralis-ai.pages.dev (commit f7b0885): 248 countries, PE shards, and a Playwright journey that returns Chiclayo. This preview is not production. Production follows the branch Cloudflare is configured to deploy.
 
 ## Review requests for the CTO
 - symbolic-0.2 internal weights (see the open questions in COMPATIBILITY_METHODOLOGY.md).

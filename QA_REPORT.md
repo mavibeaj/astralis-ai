@@ -1,4 +1,30 @@
-# QA report (updated 2026-11-27)
+# QA report (updated 2026-11-27, block 2: PR #9)
+
+## Beta readiness block (PR #9)
+- **Tests:** typecheck ✓; `npm test` 227 tests, 220 pass, 0 fail, 7 skipped (they need the full GeoNames catalog and pass in CI). Build ✓; Playwright desktop + mobile ✓.
+- **C-01 unknown time** (`tests/uncertainty.test.mjs`):
+  - DST-aware local-day windows checked: 24 h, 23 h and 25 h (New York 2021), and Peru 1987 at UTC−4.
+  - Speed bounds checked against 2 years of real motion; no body exceeded its bound.
+  - 365 days × 5 bodies compared with a 5-minute brute-force scan: **0 false "stable" results** across ≥ 30 sign changes.
+  - Unknown-time placements are sign-level only (no degree, no house), and the node is checked monotonically.
+- **C-02:** conjunctions are always `mixed`, never tense cards; mixed cross cards carry a care note.
+- **C-03:** "least represented in the available chart"; ties and coverage reported; no deficit wording (tested).
+- **C-04:** `CALIBRATION_REPORT.md`, 400 seeded pairs.
+  - 0.1: σ 2.9, with 14.5% of results exactly 50.
+  - 0.2 (time known): mean 57.5 ± 6.9, an upward bias from asymmetric polarities.
+  - ±1 h changes 0.2 by ≥ 5 points in 11.5% of pairs.
+  - 6.9% of dimensions have no evidence and are now labelled `insufficient-evidence`.
+- **C-05:** grounding validator rejects a wrong sign, body, aspect or tone, certainty and prediction, even with valid citations (6 tests). Mock model passes end to end. Full premium rewrite estimate: 1,342 input / 6,281 output tokens ≈ **USD 0.098** at placeholder prices, under the USD 0.10 target with no margin.
+- **C-06 and Gate 5:** `EDITORIAL_CASES.md` (10 cases) + `editorial-metrics.json`.
+  - 0 forbidden claims; 0 romance in friendship, after fixing a false positive the corpus found.
+  - Specificity 31–39%; shared sentences 15–34% (ES).
+  - Free length 1,473–1,713 words (4 of 10 cases exceed 1,600 by ≤ 7%).
+  - Fixes applied during the block: specific ASC/Sun sentences, open questions per area, a broken phrase, and library variant support.
+- **Live preview (verified by CI, 27 Nov 2026):** `latest-successful-preview` job → https://a42a12a1.astralis-ai.pages.dev (commit f7b0885). Catalog v2 `geonames:world`, 248 countries, 5,662,438 places; `PE/0.json` 200 `application/json` br 151,460 bytes; Playwright journey passed (Chiclayo → Lambayeque, coordinates in range). Head-commit preview still queued at Cloudflare (serial builds).
+- **Fixture privacy fix:** fixture person A had been given a birth date matching personal data. It was replaced in every file, and the Swiss Ephemeris reference was regenerated (pyswisseph 2.10.03, test-only). The value is intentionally not written here. The exposure and purge plan are in PRIVACY_INCIDENT.md.
+- **Cost model:** with the new fixture the full premium rewrite is USD 0.1016 (it was 0.098). The 0.10 target is kept and the test is marked `todo` until the LLM-scope decision is made.
+
+
 
 ## Cosmic Story v2 (PR #8)
 - `npm test`: 211 tests, 204 pass, 0 fail, 7 skipped. The skips need the full GeoNames catalog and pass in CI.
@@ -130,7 +156,7 @@ The catalog tests cover:
 - Playwright ✓
 
 ## Known limitations
-- The live Cloudflare deployment is unverified.
+- The live Cloudflare deployment is verified by CI on preview a42a12a1 (commit f7b0885). The head-commit preview is pending.
 - The mobile first search is slow on throttled networks.
 - The wheel's glyphs are small on 390 px screens (legible, with tooltips).
 - The premium report text is the deterministic generator (no generative AI).
