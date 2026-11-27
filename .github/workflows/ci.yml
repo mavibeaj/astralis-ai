@@ -18,6 +18,8 @@ jobs:
       NEXT_TELEMETRY_DISABLED: '1'
       # CI builds a real GeoNames subset (one country per continent + Peru); the deploy build is world-wide.
       GEOGRAPHY_COUNTRIES: PE,JP,KE,IS,AU,BR,ES,US,GB
+      # Founder-owned secret with regexes for personal data; the guard test skips when it is unset.
+      PRIVATE_PATTERNS: ${{ secrets.PRIVATE_PATTERNS }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
