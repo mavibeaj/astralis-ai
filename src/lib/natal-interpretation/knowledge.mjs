@@ -2,7 +2,7 @@
 // Symbolic astrology vocabulary only: no psychological diagnosis, no predictions.
 // Spanish phrasing deliberately attaches adjectives to feminine nouns ("una energía…",
 // "una forma…") so sentences never assume a person's gender.
-export const KB_VERSION = 'natal-kb-0.1';
+export const KB_VERSION = 'natal-kb-0.2';
 
 export const SIGN_NAMES = {
   es: ['Aries', 'Tauro', 'Géminis', 'Cáncer', 'Leo', 'Virgo', 'Libra', 'Escorpio', 'Sagitario', 'Capricornio', 'Acuario', 'Piscis'],
@@ -34,8 +34,8 @@ const SIGNS_EN = [null,
   {style: 'calm, steady and sensory', gift: 'patience and the ability to sustain what matters', need: 'stability, an own rhythm and concrete signs of care', shadow: 'resisting change when it arrives suddenly', love: 'with concrete gestures, steady presence and tangible details'},
   {style: 'curious, quick and conversational', gift: 'mental flexibility and a love of learning', need: 'stimulation, variety and flowing conversation', shadow: 'scattering attention or changing topic before closing what is emotional', love: 'with conversation, humour and curiosity about the other person\'s world'},
   {style: 'protective, sensitive and close', gift: 'the ability to care and create a sense of home', need: 'feeling safe and emotionally accompanied', shadow: 'withdrawing in silence', love: 'by caring, remembering what matters and building everyday intimacy'},
-  {style: 'warm, expressive and generous', gift: 'warmth and the ability to inspire others', need: 'feeling seen, appreciated and free to express itself', shadow: 'taking other people\'s disinterest personally', love: 'with visible gestures, generosity and a wish to celebrate the other'},
-  {style: 'attentive, practical and careful', gift: 'attention to detail and a wish to be useful', need: 'order, clarity and feeling that its contribution helps', shadow: 'over-demanding of itself or showing care by correcting', love: 'by helping, solving and caring for practical details'},
+  {style: 'warm, expressive and generous', gift: 'warmth and the ability to inspire others', need: 'feeling seen, appreciated and free to express themselves', shadow: 'taking other people\'s disinterest personally', love: 'with visible gestures, generosity and a wish to celebrate the other'},
+  {style: 'attentive, practical and careful', gift: 'attention to detail and a wish to be useful', need: 'order, clarity and feeling that their contribution helps', shadow: 'being overly demanding of themselves or showing care by correcting', love: 'by helping, solving and caring for practical details'},
   {style: 'kind, diplomatic and harmonious', gift: 'listening to both sides and building agreements', need: 'reciprocity, beauty and balanced relationships', shadow: 'postponing decisions to avoid discomfort', love: 'with attention, courtesy and a search for balance between both'},
   {style: 'deep, intense and private', gift: 'loyalty and the ability to get to the heart of things', need: 'trust, honesty and meaningful bonds', shadow: 'holding feelings back until trust feels completely secure', love: 'with devotion, loyalty and a wish to truly know the other'},
   {style: 'optimistic, open and adventurous', gift: 'a broad vision and the ability to find meaning', need: 'room to explore, learn and grow', shadow: 'promising more than the moment allows', love: 'by sharing plans, ideas and new experiences'},
@@ -138,11 +138,11 @@ export const CROSS_PAIRS = {
     easy: {story: 'las palabras de uno suelen encontrar eco en el mundo emocional del otro', daily: 'puede ser fácil hablar de cómo se sienten sin que la conversación se vuelva pesada', benefit: 'sentirse escuchados y comprendidos', tip: 'reserven conversaciones tranquilas para hablar de lo que les importa'},
     hard: {story: 'lo que uno dice con lógica puede recibirse de forma emocional por el otro', daily: 'un comentario práctico puede sentirse frío, o una reacción emocional parecer exagerada', misunderstanding: 'que el tono importe más que el contenido', needX: '{X} puede necesitar cuidar el tono cuando hable de temas sensibles', needY: '{Y} puede necesitar separar la intención del mensaje de su forma', action: 'cuando algo duela, digan «lo que escuché fue…» y verifiquen la intención'}},
     en: {title: ['Words that reach the heart', 'Between what is said and what is felt'],
-    easy: {story: 'one person\'s words tend to resonate with the other\'s emotional world', daily: 'talking about feelings may be easy without the conversation becoming heavy', benefit: 'feeling heard and understood', tip: 'make time for calm conversations about what matters'},
+    easy: {story: 'one person\'s words tend to resonate with the other\'s emotional world', daily: 'talking about feelings may be easy without the conversation becoming heavy', benefit: 'making room for mutual understanding', tip: 'make time for calm conversations about what matters'},
     hard: {story: 'what one says logically may be received emotionally by the other', daily: 'a practical comment may feel cold, or an emotional reaction seem excessive', misunderstanding: 'tone mattering more than content', needX: '{X} may need to watch the tone on sensitive topics', needY: '{Y} may need to separate intention from wording', action: 'when something hurts, say "what I heard was…" and check the intention'}}},
   'Moon|Venus': {area: 'affection', es: {
     title: ['Ternura que se reconoce', 'Dos lenguajes de cariño'],
-    easy: {story: 'la forma de dar cariño de uno coincide con lo que el otro necesita recibir', daily: 'los detalles cotidianos pueden sentirse acertados y fáciles de valorar', benefit: 'un afecto que se siente recíproco', tip: 'sigan nombrando los gestos que les hacen sentir queridos'},
+    easy: {story: 'la forma de dar cariño de uno coincide con lo que el otro necesita recibir', daily: 'los detalles cotidianos pueden sentirse acertados y fáciles de valorar', benefit: 'cultivar gestos de aprecio recíproco', tip: 'sigan nombrando los gestos que les hacen sentir queridos'},
     hard: {story: 'ambos pueden querer de verdad, pero expresar y recibir el cariño de maneras diferentes', daily: 'un gesto pensado con cariño puede pasar desapercibido para el otro', misunderstanding: 'creer que el otro no se esfuerza cuando solo usa otro lenguaje', needX: '{X} puede necesitar preguntarle a {Y} cómo prefiere recibir cariño', needY: '{Y} puede necesitar reconocer los gestos de {X} aunque no sean los que esperaba', action: 'hagan una lista breve de tres gestos que cada uno valora y compártanla'}},
     en: {title: ['Tenderness that is recognised', 'Two love languages'],
     easy: {story: 'one person\'s way of giving affection matches what the other needs to receive', daily: 'everyday details may feel right and easy to appreciate', benefit: 'affection that feels reciprocal', tip: 'keep naming the gestures that make you feel loved'},
@@ -173,7 +173,7 @@ export const CROSS_PAIRS = {
     easy: {story: 'uno puede ofrecer estabilidad y el otro sentirse emocionalmente sostenido', daily: 'en momentos difíciles, la presencia constante de uno puede dar calma', benefit: 'confianza y lealtad a largo plazo', tip: 'agradezcan explícitamente la constancia que se ofrecen'},
     hard: {story: 'la prudencia de uno puede sentirse distante para las necesidades emocionales del otro', daily: 'uno puede necesitar cercanía cuando el otro responde con soluciones o silencio', misunderstanding: 'que la contención se lea como frialdad', needX: '{X} puede necesitar mostrar el afecto, no solo la responsabilidad', needY: '{Y} puede necesitar reconocer el cuidado detrás de la seriedad', action: 'pregunten «¿quieres que te escuche o que te ayude a resolver?»'}},
     en: {title: ['Caring with responsibility', 'Security that is built'],
-    easy: {story: 'one can offer stability and the other feel emotionally held', daily: 'in hard moments, one\'s steady presence may bring calm', benefit: 'trust and long-term loyalty', tip: 'thank each other explicitly for that constancy'},
+    easy: {story: 'one can offer stability and the other feel emotionally held', daily: 'in hard moments, one\'s steady presence may bring calm', benefit: 'cultivating trust and consistency over time', tip: 'thank each other explicitly for that constancy'},
     hard: {story: 'one\'s caution may feel distant to the other\'s emotional needs', daily: 'one may need closeness while the other responds with solutions or silence', misunderstanding: 'restraint read as coldness', needX: '{X} may need to show affection, not only responsibility', needY: '{Y} may need to recognise the care behind the seriousness', action: 'ask "do you want me to listen or to help you solve it?"'}}},
   'Saturn|Venus': {area: 'commitment', es: {
     title: ['Un cariño que busca durar', 'Afecto y prudencia'],
@@ -184,7 +184,7 @@ export const CROSS_PAIRS = {
     hard: {story: 'one\'s way of loving may meet the other\'s caution', daily: 'one may want more expressiveness while the other moves carefully', misunderstanding: 'caution interpreted as little interest', needX: '{X} may need patience with {Y}\'s timing', needY: '{Y} may need to show with concrete gestures that the bond matters', action: 'talk about expectations of time and commitment without pressure'}}},
   'Jupiter|Sun': {area: 'growth', es: {
     title: ['Se impulsan a crecer', 'Optimismo compartido'],
-    easy: {story: 'uno puede animar y ampliar los horizontes del otro', daily: 'pueden motivarse a aprender, viajar o intentar cosas nuevas', benefit: 'confianza y crecimiento mutuo', tip: 'planeen una experiencia nueva que ninguno haya vivido'},
+    easy: {story: 'uno puede animar y ampliar los horizontes del otro', daily: 'pueden motivarse a aprender, viajar o intentar cosas nuevas', benefit: 'explorar la confianza y el aprendizaje compartido', tip: 'planeen una experiencia nueva que ninguno haya vivido'},
     hard: {story: 'el entusiasmo de uno puede sentirse excesivo para el otro', daily: 'pueden surgir planes grandes que luego cuesta concretar', misunderstanding: 'que el optimismo se lea como falta de realismo', needX: '{X} puede necesitar aterrizar los planes', needY: '{Y} puede necesitar valorar la visión de {X}', action: 'conviertan cada gran idea en un primer paso concreto'}},
     en: {title: ['You push each other to grow', 'Shared optimism'],
     easy: {story: 'one can encourage and broaden the other\'s horizons', daily: 'you may motivate each other to learn, travel or try new things', benefit: 'confidence and mutual growth', tip: 'plan a new experience neither of you has had'},
@@ -207,8 +207,801 @@ export const CROSS_PAIRS = {
 // Which body's owner is {X} in each library entry (the other is {Y}). Same-body pairs: person A is {X}.
 const X_BODY = {'Moon|Sun': 'Sun', 'Mars|Venus': 'Mars', 'Mercury|Moon': 'Mercury', 'Moon|Venus': 'Venus', 'Saturn|Sun': 'Sun', 'Moon|Saturn': 'Saturn', 'Saturn|Venus': 'Venus', 'Jupiter|Sun': 'Jupiter', 'Ascendant|Venus': 'Ascendant'};
 for (const [k, v] of Object.entries(CROSS_PAIRS)) v.x = X_BODY[k] ?? null;
-// Pairs reused with an equivalent reading (keys sorted), with their own {X} body.
-for (const [alias, target, x] of [['Jupiter|Moon', 'Jupiter|Sun', 'Jupiter'], ['Jupiter|Venus', 'Jupiter|Sun', 'Jupiter'], ['Ascendant|Moon', 'Moon|Sun', 'Ascendant'], ['Ascendant|Sun', 'Sun|Sun', null], ['Sun|Venus', 'Moon|Venus', 'Venus'], ['Ascendant|Mars', 'Ascendant|Venus', 'Ascendant']]) CROSS_PAIRS[alias] = {...CROSS_PAIRS[target], x, alias: target};
+// Dedicated bilingual readings; no aliases between distinct contacts.
+Object.assign(CROSS_PAIRS, {
+  "Jupiter|Moon": {
+    "x": "Jupiter",
+    "area": "emotional",
+    "es": {
+      "title": [
+        "Entusiasmo que deja espacio a sentir",
+        "Optimismo y necesidades emocionales"
+      ],
+      "easy": {
+        "story": "{X} podría aportar perspectiva cuando {Y} necesita apoyo",
+        "daily": "al compartir una preocupación, podrían explorar alternativas sin apresurar la conversación",
+        "benefit": "acompañarse sin minimizar lo que sienten",
+        "tip": "pregunten si necesitan escucha o ideas"
+      },
+      "hard": {
+        "story": "el entusiasmo de {X} podría no coincidir con el ritmo emocional de {Y}",
+        "daily": "una preocupación podría recibir soluciones antes de ser escuchada",
+        "misunderstanding": "confundir una invitación a mirar adelante con falta de atención",
+        "needX": "escuchar antes de ofrecer soluciones",
+        "needY": "explicar qué apoyo necesita",
+        "action": "acuerden cuándo escuchar y cuándo sugerir"
+      }
+    },
+    "en": {
+      "title": [
+        "Optimism with room for feelings",
+        "Optimism and emotional needs"
+      ],
+      "easy": {
+        "story": "{X} might offer perspective when {Y} needs support",
+        "daily": "when sharing a concern, they could explore options without rushing the conversation",
+        "benefit": "support without minimizing feelings",
+        "tip": "ask whether listening or ideas would help"
+      },
+      "hard": {
+        "story": "{X}'s optimism might not match {Y}'s emotional pace",
+        "daily": "a concern might receive solutions before being heard",
+        "misunderstanding": "mistaking encouragement for inattention",
+        "needX": "listen before offering solutions",
+        "needY": "say what support would help",
+        "action": "agree when to listen and when to suggest"
+      }
+    }
+  },
+  "Jupiter|Venus": {
+    "x": "Jupiter",
+    "area": "growth",
+    "es": {
+      "title": [
+        "Compartir nuevos descubrimientos",
+        "Generosidad y preferencias"
+      ],
+      "easy": {
+        "story": "{X} podría estimular a {Y} a explorar nuevos gustos y experiencias",
+        "daily": "al elegir un paseo, pueden combinar algo familiar con algo nuevo",
+        "benefit": "curiosidad compartida",
+        "tip": "alternen quién propone una actividad"
+      },
+      "hard": {
+        "story": "las propuestas de {X} podrían exceder las preferencias o recursos de {Y}",
+        "daily": "un plan ambicioso podría necesitar ajustes",
+        "misunderstanding": "confundir moderación con falta de entusiasmo",
+        "needX": "consultar preferencias antes de ampliar un plan",
+        "needY": "expresar límites sin descalificar la idea",
+        "action": "acuerden un plan y un presupuesto cómodos"
+      }
+    },
+    "en": {
+      "title": [
+        "Discovering new things together",
+        "Generosity and preferences"
+      ],
+      "easy": {
+        "story": "{X} might encourage {Y} to explore new tastes and experiences",
+        "daily": "when choosing an outing, they could combine something familiar with something new",
+        "benefit": "shared curiosity",
+        "tip": "take turns proposing an activity"
+      },
+      "hard": {
+        "story": "{X}'s suggestions might exceed {Y}'s preferences or resources",
+        "daily": "an ambitious plan might need adjustments",
+        "misunderstanding": "mistaking moderation for lack of enthusiasm",
+        "needX": "check preferences before expanding a plan",
+        "needY": "express limits without dismissing the idea",
+        "action": "agree on a comfortable plan and budget"
+      }
+    }
+  },
+  "Ascendant|Moon": {
+    "x": "Ascendant",
+    "area": "emotional",
+    "es": {
+      "title": [
+        "Presencia que invita a conversar",
+        "Primera impresión y sensibilidad"
+      ],
+      "easy": {
+        "story": "la manera de presentarse de {X} podría facilitar que {Y} exprese lo que siente",
+        "daily": "al reencontrarse después de un día difícil, un saludo atento podría abrir una conversación",
+        "benefit": "comodidad para compartir experiencias",
+        "tip": "pregunten cómo llega cada persona al encuentro"
+      },
+      "hard": {
+        "story": "la expresión exterior de {X} podría no reflejar lo que {Y} necesita en ese momento",
+        "daily": "una respuesta breve podría parecer distante",
+        "misunderstanding": "confundir un gesto visible con una intención",
+        "needX": "preguntar en lugar de interpretar el silencio",
+        "needY": "explicar qué gesto sería útil",
+        "action": "acuerden una señal para pedir tiempo o compañía"
+      }
+    },
+    "en": {
+      "title": [
+        "A presence that invites conversation",
+        "First impressions and sensitivity"
+      ],
+      "easy": {
+        "story": "{X}'s way of presenting themselves might help {Y} share feelings",
+        "daily": "meeting after a difficult day, an attentive greeting could open a conversation",
+        "benefit": "comfort sharing experiences",
+        "tip": "ask how each person is arriving at the meeting"
+      },
+      "hard": {
+        "story": "{X}'s outward expression might not match what {Y} needs at that moment",
+        "daily": "a brief response might seem distant",
+        "misunderstanding": "mistaking a visible gesture for an intention",
+        "needX": "ask instead of interpreting silence",
+        "needY": "explain which gesture would help",
+        "action": "agree on a signal for time or company"
+      }
+    }
+  },
+  "Ascendant|Sun": {
+    "x": "Ascendant",
+    "area": "stability",
+    "es": {
+      "title": [
+        "Reconocer estilos y propósitos",
+        "Imagen exterior e identidad"
+      ],
+      "easy": {
+        "story": "la presencia de {X} podría facilitar que {Y} exprese sus prioridades",
+        "daily": "al presentar un proyecto, pueden explorar cómo comunicarlo a otras personas",
+        "benefit": "respeto por maneras distintas de mostrarse",
+        "tip": "compartan algo que les importa y cómo prefieren expresarlo"
+      },
+      "hard": {
+        "story": "la imagen de {X} podría contrastar con las prioridades de {Y}",
+        "daily": "al organizar una reunión, pueden preferir estilos diferentes",
+        "misunderstanding": "confundir estilo social con valores personales",
+        "needX": "dar espacio a las prioridades ajenas",
+        "needY": "explicar sus objetivos sin juzgar las formas",
+        "action": "distingan qué quieren lograr de cómo presentarlo"
+      }
+    },
+    "en": {
+      "title": [
+        "Recognizing styles and purpose",
+        "Outward style and identity"
+      ],
+      "easy": {
+        "story": "{X}'s presence might help {Y} express their priorities",
+        "daily": "when introducing a project, they could explore how to communicate it to others",
+        "benefit": "respect for different ways of showing up",
+        "tip": "share something that matters and how you prefer to express it"
+      },
+      "hard": {
+        "story": "{X}'s outward style might contrast with {Y}'s priorities",
+        "daily": "when organizing a gathering, they might prefer different styles",
+        "misunderstanding": "mistaking social style for personal values",
+        "needX": "make space for the other's priorities",
+        "needY": "explain goals without judging presentation",
+        "action": "separate what you want to achieve from how you present it"
+      }
+    }
+  },
+  "Sun|Venus": {
+    "x": "Sun",
+    "area": "affection",
+    "es": {
+      "title": [
+        "Apreciar lo que importa",
+        "Identidad y formas de valorar"
+      ],
+      "easy": {
+        "story": "las prioridades de {X} podrían encontrar reconocimiento en los gestos de {Y}",
+        "daily": "al celebrar un logro, pueden descubrir qué tipo de reconocimiento resulta significativo",
+        "benefit": "apreciación de intereses individuales",
+        "tip": "pregunten qué gestos les hacen sentir que su esfuerzo importa"
+      },
+      "hard": {
+        "story": "las prioridades de {X} podrían diferir de lo que {Y} considera una muestra de aprecio",
+        "daily": "un regalo o un plan podría no expresar el mensaje esperado",
+        "misunderstanding": "confundir una diferencia de gustos con desinterés",
+        "needX": "reconocer el gesto sin renunciar a sus preferencias",
+        "needY": "preguntar qué forma de reconocimiento resulta útil",
+        "action": "compartan ejemplos de gestos apreciados"
+      }
+    },
+    "en": {
+      "title": [
+        "Appreciating what matters",
+        "Identity and ways of valuing"
+      ],
+      "easy": {
+        "story": "{X}'s priorities might find recognition in {Y}'s gestures",
+        "daily": "when celebrating an achievement, they could discover which recognition feels meaningful",
+        "benefit": "appreciation of individual interests",
+        "tip": "ask which gestures make your efforts feel valued"
+      },
+      "hard": {
+        "story": "{X}'s priorities might differ from what {Y} sees as appreciation",
+        "daily": "a gift or a plan might not convey the intended message",
+        "misunderstanding": "mistaking different tastes for indifference",
+        "needX": "recognize the gesture without abandoning preferences",
+        "needY": "ask which recognition would help",
+        "action": "share examples of appreciated gestures"
+      }
+    }
+  },
+  "Ascendant|Mars": {
+    "x": "Mars",
+    "area": "conflict",
+    "es": {
+      "title": [
+        "Iniciativa que encuentra respuesta",
+        "Acción y presencia"
+      ],
+      "easy": {
+        "story": "la iniciativa de {X} podría combinarse con la manera de actuar en público de {Y}",
+        "daily": "al organizar una salida, pueden acordar quién propone y quién coordina",
+        "benefit": "colaboración con espacio para ambos",
+        "tip": "alternen el liderazgo en actividades sencillas"
+      },
+      "hard": {
+        "story": "la rapidez de {X} podría contrastar con la forma en que {Y} prefiere participar",
+        "daily": "un cambio de plan podría requerir una pausa",
+        "misunderstanding": "confundir una propuesta con una exigencia",
+        "needX": "consultar antes de actuar",
+        "needY": "expresar su ritmo y sus límites",
+        "action": "acuerden qué decisiones requieren consenso"
+      }
+    },
+    "en": {
+      "title": [
+        "Initiative that finds a response",
+        "Action and presence"
+      ],
+      "easy": {
+        "story": "{X}'s initiative might complement {Y}'s outward approach",
+        "daily": "when organizing an outing, they could agree who proposes and who coordinates",
+        "benefit": "collaboration with room for both",
+        "tip": "alternate leadership in simple activities"
+      },
+      "hard": {
+        "story": "{X}'s pace might contrast with how {Y} prefers to participate",
+        "daily": "a change of plans might require a pause",
+        "misunderstanding": "mistaking a suggestion for a demand",
+        "needX": "check before acting",
+        "needY": "express pace and limits",
+        "action": "agree which decisions need consensus"
+      }
+    }
+  },
+  "Mars|Sun": {
+    "x": "Sun",
+    "area": "conflict",
+    "es": {
+      "title": [
+        "De la idea a la acción",
+        "Dirección y ritmo"
+      ],
+      "easy": {
+        "story": "{X} podría aportar dirección mientras {Y} propone un primer paso",
+        "daily": "al planear un proyecto, pueden distinguir el objetivo de las tareas",
+        "benefit": "iniciativa coordinada",
+        "tip": "acuerden una meta y una acción pequeña"
+      },
+      "hard": {
+        "story": "las prioridades de {X} podrían chocar con el ritmo de acción de {Y}",
+        "daily": "una decisión podría requerir más reflexión antes de actuar",
+        "misunderstanding": "confundir una pausa con desinterés o una propuesta con presión",
+        "needX": "explicar qué necesita decidir",
+        "needY": "consultar antes de acelerar",
+        "action": "definan un momento para decidir juntos"
+      }
+    },
+    "en": {
+      "title": [
+        "From idea to action",
+        "Direction and pace"
+      ],
+      "easy": {
+        "story": "{X} might provide direction while {Y} proposes a first step",
+        "daily": "when planning a project, they can distinguish the goal from the tasks",
+        "benefit": "coordinated initiative",
+        "tip": "agree on a goal and one small action"
+      },
+      "hard": {
+        "story": "{X}'s priorities might clash with {Y}'s pace of action",
+        "daily": "a decision might need more reflection before action",
+        "misunderstanding": "mistaking a pause for indifference or a proposal for pressure",
+        "needX": "explain what needs deciding",
+        "needY": "check before speeding up",
+        "action": "set a time to decide together"
+      }
+    }
+  },
+  "Mercury|Venus": {
+    "x": "Mercury",
+    "area": "communication",
+    "es": {
+      "title": [
+        "Palabras que expresan aprecio",
+        "Ideas y formas de cuidar"
+      ],
+      "easy": {
+        "story": "{X} podría encontrar palabras para reconocer lo que {Y} valora",
+        "daily": "al comentar una experiencia, pueden conectar ideas con preferencias",
+        "benefit": "conversaciones atentas",
+        "tip": "describan un gesto que apreciaron"
+      },
+      "hard": {
+        "story": "el estilo verbal de {X} podría diferir de la sensibilidad de {Y}",
+        "daily": "una crítica práctica podría recibirse como una valoración personal",
+        "misunderstanding": "confundir desacuerdo con falta de aprecio",
+        "needX": "separar observaciones de juicios",
+        "needY": "explicar cómo recibió el mensaje",
+        "action": "reformulen una frase difícil sin perder su sentido"
+      }
+    },
+    "en": {
+      "title": [
+        "Words that express appreciation",
+        "Ideas and ways of caring"
+      ],
+      "easy": {
+        "story": "{X} might find words to acknowledge what {Y} values",
+        "daily": "when discussing an experience, they could connect ideas with preferences",
+        "benefit": "thoughtful conversations",
+        "tip": "describe a gesture you appreciated"
+      },
+      "hard": {
+        "story": "{X}'s verbal style might differ from {Y}'s sensitivity",
+        "daily": "practical feedback might be received as a personal judgment",
+        "misunderstanding": "mistaking disagreement for lack of appreciation",
+        "needX": "separate observations from judgments",
+        "needY": "explain how the message landed",
+        "action": "rephrase a difficult sentence without losing its meaning"
+      }
+    }
+  },
+  "Neptune|Venus": {
+    "x": "Venus",
+    "area": "affection",
+    "es": {
+      "title": [
+        "Imaginación y gestos de cuidado",
+        "Expectativas e idealización"
+      ],
+      "easy": {
+        "story": "los valores de {X} podrían encontrar inspiración en la imaginación de {Y}",
+        "daily": "pueden explorar música, arte o planes creativos",
+        "benefit": "sensibilidad compartida",
+        "tip": "elijan una actividad creativa y comenten qué disfrutaron"
+      },
+      "hard": {
+        "story": "las preferencias de {X} podrían no coincidir con las imágenes que construye {Y}",
+        "daily": "una expectativa no expresada podría provocar confusión",
+        "misunderstanding": "confundir una ilusión con un acuerdo",
+        "needX": "expresar preferencias concretas",
+        "needY": "distinguir lo imaginado de lo acordado",
+        "action": "verifiquen expectativas antes de hacer planes"
+      }
+    },
+    "en": {
+      "title": [
+        "Imagination and caring gestures",
+        "Expectations and idealization"
+      ],
+      "easy": {
+        "story": "{X}'s values might find inspiration in {Y}'s imagination",
+        "daily": "they might explore music, art or creative plans",
+        "benefit": "shared sensitivity",
+        "tip": "choose a creative activity and discuss what you enjoyed"
+      },
+      "hard": {
+        "story": "{X}'s preferences might differ from the images {Y} builds",
+        "daily": "an unspoken expectation might create confusion",
+        "misunderstanding": "mistaking an imagined possibility for an agreement",
+        "needX": "express concrete preferences",
+        "needY": "distinguish imagination from agreement",
+        "action": "check expectations before making plans"
+      }
+    }
+  },
+  "Moon|Pluto": {
+    "x": "Moon",
+    "area": "emotional",
+    "es": {
+      "title": [
+        "Conversaciones con profundidad",
+        "Intensidad y espacio emocional"
+      ],
+      "easy": {
+        "story": "{X} podría encontrar espacio para explorar emociones junto a la intensidad simbólica de {Y}",
+        "daily": "una conversación importante podría invitar a escuchar con paciencia",
+        "benefit": "reflexión emocional",
+        "tip": "pregunten cuánto quieren compartir en ese momento"
+      },
+      "hard": {
+        "story": "las necesidades emocionales de {X} podrían requerir un ritmo distinto de la intensidad de {Y}",
+        "daily": "un tema delicado podría necesitar una pausa",
+        "misunderstanding": "confundir profundidad con obligación de revelar algo",
+        "needX": "marcar cuánto quiere compartir",
+        "needY": "respetar los límites de la conversación",
+        "action": "acuerden que cualquier persona puede detener un tema"
+      }
+    },
+    "en": {
+      "title": [
+        "Conversations with depth",
+        "Intensity and emotional space"
+      ],
+      "easy": {
+        "story": "{X} might find room to explore feelings alongside {Y}'s symbolic intensity",
+        "daily": "an important conversation could invite patient listening",
+        "benefit": "emotional reflection",
+        "tip": "ask how much you want to share right now"
+      },
+      "hard": {
+        "story": "{X}'s emotional needs might require a different pace from {Y}'s intensity",
+        "daily": "a delicate subject might need a pause",
+        "misunderstanding": "mistaking depth for an obligation to disclose",
+        "needX": "state how much they wish to share",
+        "needY": "respect conversational boundaries",
+        "action": "agree either person can pause a topic"
+      }
+    }
+  },
+  "Sun|Uranus": {
+    "x": "Sun",
+    "area": "independence",
+    "es": {
+      "title": [
+        "Identidad y nuevas posibilidades",
+        "Autonomía y continuidad"
+      ],
+      "easy": {
+        "story": "{Y} podría invitar a {X} a considerar caminos alternativos para sus proyectos",
+        "daily": "al revisar una rutina, pueden probar una opción nueva",
+        "benefit": "flexibilidad sin perder dirección",
+        "tip": "elijan un cambio reversible para experimentar"
+      },
+      "hard": {
+        "story": "la búsqueda de continuidad de {X} podría contrastar con la apertura al cambio de {Y}",
+        "daily": "un cambio inesperado podría necesitar conversación previa",
+        "misunderstanding": "confundir autonomía con falta de consideración",
+        "needX": "explicar qué desea conservar",
+        "needY": "avisar antes de alterar acuerdos",
+        "action": "distingan decisiones individuales de compromisos compartidos"
+      }
+    },
+    "en": {
+      "title": [
+        "Identity and new possibilities",
+        "Autonomy and continuity"
+      ],
+      "easy": {
+        "story": "{Y} might invite {X} to consider alternative paths for their projects",
+        "daily": "when reviewing a routine, they could try a new option",
+        "benefit": "flexibility without losing direction",
+        "tip": "choose a reversible change to try"
+      },
+      "hard": {
+        "story": "{X}'s search for continuity might contrast with {Y}'s openness to change",
+        "daily": "an unexpected change might need prior discussion",
+        "misunderstanding": "mistaking autonomy for lack of consideration",
+        "needX": "explain what they want to preserve",
+        "needY": "give notice before changing agreements",
+        "action": "distinguish individual decisions from shared commitments"
+      }
+    }
+  },
+  "Mars|Moon": {
+    "x": "Moon",
+    "area": "emotional",
+    "es": {
+      "title": [
+        "Cuidado en movimiento",
+        "Sentir y actuar a ritmos distintos"
+      ],
+      "easy": {
+        "story": "{Y} podría convertir las necesidades expresadas por {X} en gestos concretos de apoyo",
+        "daily": "en un día difícil, podrían organizar una ayuda práctica",
+        "benefit": "apoyo respetuoso",
+        "tip": "pregunten qué acción sería bienvenida"
+      },
+      "hard": {
+        "story": "{Y} podría querer actuar antes de que {X} termine de expresar sus emociones",
+        "daily": "un desacuerdo podría necesitar una pausa antes de buscar soluciones",
+        "misunderstanding": "confundir urgencia con ayuda",
+        "needX": "expresar si necesita tiempo",
+        "needY": "consultar antes de intervenir",
+        "action": "acuerden escuchar primero y actuar después"
+      }
+    },
+    "en": {
+      "title": [
+        "Care in motion",
+        "Feeling and acting at different speeds"
+      ],
+      "easy": {
+        "story": "{Y} might turn needs expressed by {X} into concrete gestures of support",
+        "daily": "on a difficult day, they could organize practical help",
+        "benefit": "respectful support",
+        "tip": "ask what action would be welcome"
+      },
+      "hard": {
+        "story": "{Y} might want to act before {X} finishes expressing feelings",
+        "daily": "a disagreement might need a pause before solutions",
+        "misunderstanding": "mistaking urgency for help",
+        "needX": "say if they need time",
+        "needY": "check before intervening",
+        "action": "agree to listen first and act second"
+      }
+    }
+  },
+  "Mars|Mercury": {
+    "x": "Mercury",
+    "area": "communication",
+    "es": {
+      "title": [
+        "Ideas que se ponen en marcha",
+        "Conversación y velocidad"
+      ],
+      "easy": {
+        "story": "{X} podría ordenar ideas mientras {Y} explora cómo ejecutarlas",
+        "daily": "al resolver una tarea, pueden repartir planificación y ejecución",
+        "benefit": "decisiones conversadas",
+        "tip": "resuman la propuesta antes de actuar"
+      },
+      "hard": {
+        "story": "la rapidez de {Y} podría dificultar que {X} termine de explicar una idea",
+        "daily": "en una discusión podrían interrumpirse sin querer",
+        "misunderstanding": "confundir una objeción con un ataque",
+        "needX": "formular una petición concreta",
+        "needY": "dejar terminar antes de responder",
+        "action": "usen turnos breves para explicar sus puntos"
+      }
+    },
+    "en": {
+      "title": [
+        "Ideas put into action",
+        "Conversation and speed"
+      ],
+      "easy": {
+        "story": "{X} might organize ideas while {Y} explores how to act on them",
+        "daily": "when solving a task, they can divide planning and execution",
+        "benefit": "discussed decisions",
+        "tip": "summarize the proposal before acting"
+      },
+      "hard": {
+        "story": "{Y}'s speed might make it harder for {X} to finish explaining an idea",
+        "daily": "in a discussion, interruptions could happen unintentionally",
+        "misunderstanding": "mistaking an objection for an attack",
+        "needX": "make a concrete request",
+        "needY": "let the other finish before responding",
+        "action": "use short turns to explain your views"
+      }
+    }
+  },
+  "Pluto|Venus": {
+    "x": "Venus",
+    "area": "affection",
+    "es": {
+      "title": [
+        "Valorar con profundidad",
+        "Aprecio y límites"
+      ],
+      "easy": {
+        "story": "{X} podría explorar qué valora junto a la intensidad simbólica de {Y}",
+        "daily": "al compartir una experiencia significativa, pueden hablar de lo que quieren cuidar",
+        "benefit": "claridad sobre valores",
+        "tip": "elijan un valor que quieran cultivar"
+      },
+      "hard": {
+        "story": "las preferencias de {X} podrían requerir límites frente a la intensidad de {Y}",
+        "daily": "una conversación muy personal podría necesitar consentimiento explícito",
+        "misunderstanding": "confundir cercanía con acceso ilimitado",
+        "needX": "decir qué desea mantener en privado",
+        "needY": "respetar una negativa sin insistir",
+        "action": "pregunten antes de profundizar en temas privados"
+      }
+    },
+    "en": {
+      "title": [
+        "Valuing with depth",
+        "Appreciation and boundaries"
+      ],
+      "easy": {
+        "story": "{X} might explore what they value alongside {Y}'s symbolic intensity",
+        "daily": "when sharing a meaningful experience, they can discuss what they want to care for",
+        "benefit": "clarity about values",
+        "tip": "choose one value to cultivate"
+      },
+      "hard": {
+        "story": "{X}'s preferences might need boundaries alongside {Y}'s intensity",
+        "daily": "a personal conversation might require explicit consent",
+        "misunderstanding": "mistaking closeness for unlimited access",
+        "needX": "say what they want to keep private",
+        "needY": "respect a refusal without pressing",
+        "action": "ask before exploring private topics"
+      }
+    }
+  },
+  "Neptune|Sun": {
+    "x": "Sun",
+    "area": "growth",
+    "es": {
+      "title": [
+        "Propósito e imaginación",
+        "Visión y claridad"
+      ],
+      "easy": {
+        "story": "{Y} podría aportar imaginación a los proyectos que importan a {X}",
+        "daily": "al diseñar un plan creativo, pueden combinar visión y pasos concretos",
+        "benefit": "exploración creativa",
+        "tip": "anoten una idea y una acción posible"
+      },
+      "hard": {
+        "story": "la visión de {Y} podría no coincidir con los objetivos concretos de {X}",
+        "daily": "un proyecto podría necesitar definiciones antes de comprometer recursos",
+        "misunderstanding": "confundir una posibilidad con una promesa",
+        "needX": "expresar prioridades verificables",
+        "needY": "aclarar qué es una idea y qué es un acuerdo",
+        "action": "escriban juntos el próximo paso"
+      }
+    },
+    "en": {
+      "title": [
+        "Purpose and imagination",
+        "Vision and clarity"
+      ],
+      "easy": {
+        "story": "{Y} might bring imagination to projects that matter to {X}",
+        "daily": "when designing a creative plan, they can combine vision and concrete steps",
+        "benefit": "creative exploration",
+        "tip": "write down one idea and one possible action"
+      },
+      "hard": {
+        "story": "{Y}'s vision might not match {X}'s concrete goals",
+        "daily": "a project might need definitions before committing resources",
+        "misunderstanding": "mistaking a possibility for a promise",
+        "needX": "express verifiable priorities",
+        "needY": "clarify what is an idea and what is an agreement",
+        "action": "write the next step together"
+      }
+    }
+  },
+  "Moon|Neptune": {
+    "x": "Moon",
+    "area": "emotional",
+    "es": {
+      "title": [
+        "Imaginación y escucha",
+        "Sensibilidad sin suposiciones"
+      ],
+      "easy": {
+        "story": "{Y} podría aportar una perspectiva imaginativa al mundo emocional de {X}",
+        "daily": "al compartir una historia, pueden preguntar qué significado tiene para cada persona",
+        "benefit": "escucha curiosa",
+        "tip": "pregunten antes de interpretar emociones"
+      },
+      "hard": {
+        "story": "{Y} podría imaginar lo que siente {X} sin conocerlo",
+        "daily": "un silencio podría admitir varias explicaciones",
+        "misunderstanding": "confundir intuición con certeza",
+        "needX": "nombrar lo que siente si quiere compartirlo",
+        "needY": "verificar interpretaciones mediante preguntas",
+        "action": "cambien las suposiciones por preguntas abiertas"
+      }
+    },
+    "en": {
+      "title": [
+        "Imagination and listening",
+        "Sensitivity without assumptions"
+      ],
+      "easy": {
+        "story": "{Y} might bring an imaginative perspective to {X}'s emotional world",
+        "daily": "when sharing a story, they can ask what it means to each person",
+        "benefit": "curious listening",
+        "tip": "ask before interpreting feelings"
+      },
+      "hard": {
+        "story": "{Y} might imagine what {X} feels without knowing",
+        "daily": "silence might have several explanations",
+        "misunderstanding": "mistaking intuition for certainty",
+        "needX": "name feelings if they wish to share",
+        "needY": "check interpretations through questions",
+        "action": "replace assumptions with open questions"
+      }
+    }
+  },
+  "Mercury|Saturn": {
+    "x": "Mercury",
+    "area": "communication",
+    "es": {
+      "title": [
+        "Ideas con estructura",
+        "Expresión y exigencia"
+      ],
+      "easy": {
+        "story": "{Y} podría ayudar a {X} a organizar una idea compleja",
+        "daily": "al preparar un proyecto, pueden revisar detalles y prioridades",
+        "benefit": "claridad y planificación",
+        "tip": "distingan una lluvia de ideas de una revisión"
+      },
+      "hard": {
+        "story": "el énfasis de {Y} en los detalles podría contrastar con el ritmo de pensamiento de {X}",
+        "daily": "una corrección temprana podría interrumpir una explicación",
+        "misunderstanding": "confundir revisión con descalificación",
+        "needX": "explicar cuándo quiere comentarios",
+        "needY": "preguntar antes de corregir",
+        "action": "acuerden una fase para proponer y otra para revisar"
+      }
+    },
+    "en": {
+      "title": [
+        "Ideas with structure",
+        "Expression and expectations"
+      ],
+      "easy": {
+        "story": "{Y} might help {X} organize a complex idea",
+        "daily": "when preparing a project, they can review details and priorities",
+        "benefit": "clarity and planning",
+        "tip": "separate brainstorming from review"
+      },
+      "hard": {
+        "story": "{Y}'s emphasis on details might contrast with {X}'s thinking pace",
+        "daily": "early correction could interrupt an explanation",
+        "misunderstanding": "mistaking review for dismissal",
+        "needX": "say when feedback is wanted",
+        "needY": "ask before correcting",
+        "action": "agree on a proposing phase and a reviewing phase"
+      }
+    }
+  },
+  "Mars|Saturn": {
+    "x": "Mars",
+    "area": "stability",
+    "es": {
+      "title": [
+        "Energía con dirección",
+        "Iniciativa y prudencia"
+      ],
+      "easy": {
+        "story": "{X} podría aportar movimiento mientras {Y} ayuda a ordenar los pasos",
+        "daily": "al iniciar una tarea larga, pueden repartir acción y seguimiento",
+        "benefit": "constancia compartida",
+        "tip": "acuerden un objetivo pequeño con fecha de revisión"
+      },
+      "hard": {
+        "story": "la iniciativa de {X} podría encontrar límites en la prudencia de {Y}",
+        "daily": "un plan urgente podría requerir revisar recursos",
+        "misunderstanding": "confundir cautela con rechazo o rapidez con imprudencia",
+        "needX": "explicar la urgencia",
+        "needY": "explicar la razón de un límite",
+        "action": "acuerden qué puede comenzar hoy y qué necesita revisión"
+      }
+    },
+    "en": {
+      "title": [
+        "Energy with direction",
+        "Initiative and caution"
+      ],
+      "easy": {
+        "story": "{X} might bring momentum while {Y} helps organize the steps",
+        "daily": "when starting a long task, they can divide action and follow-up",
+        "benefit": "shared consistency",
+        "tip": "agree on a small goal and review date"
+      },
+      "hard": {
+        "story": "{X}'s initiative might meet limits in {Y}'s caution",
+        "daily": "an urgent plan might need a resource review",
+        "misunderstanding": "mistaking caution for rejection or speed for recklessness",
+        "needX": "explain the urgency",
+        "needY": "explain the reason for a limit",
+        "action": "agree what can start today and what needs review"
+      }
+    }
+  }
+});
 // Domain phrases with Spanish article, for generic cross readings.
 export const DOMAINS_ART = {
   es: {Sun: 'la identidad', Moon: 'el mundo emocional', Mercury: 'la forma de pensar', Venus: 'la forma de querer', Mars: 'el impulso', Jupiter: 'el afán de crecer', Saturn: 'el sentido de responsabilidad', Uranus: 'la necesidad de libertad', Neptune: 'la imaginación', Pluto: 'la intensidad', Ascendant: 'la forma de presentarse', Midheaven: 'las aspiraciones'},
