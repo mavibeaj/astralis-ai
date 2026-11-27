@@ -4,6 +4,9 @@ Runs automatically as part of `npm run build` (the deployment build). It fails l
 (non-zero exit) when GeoNames cannot be downloaded or the result is incomplete, so a
 deployment can never ship with empty selectors.
 
+If geography.lock.json pins a versioned catalog, that bundle is installed instead
+(scripts/fetch-geography-release.py, SHA-256 verified) and nothing is rebuilt.
+GEOGRAPHY_REBUILD=1        ignores the lock and rebuilds from GeoNames (release workflow).
 GEOGRAPHY_COUNTRIES=PE,CL  restricts the build (CI smoke only; the manifest records it).
 Writes metrics to geography-stats.json.
 """
@@ -34,6 +37,14 @@ def lines(name):
 
 
 def main():
+    if os.environ.get('GEOGRAPHY_REBUILD') != '1' and not os.environ.get('GEOGRAPHY_COUNTRIES'):
+        import subprocess
+        rc = subprocess.call([sys.executable, str(pathlib.Path(__file__).parent / 'fetch-geography-release.py')])
+        if rc == 0:
+            return
+        if rc != 3:
+            sys.exit(rc)
+        print('no pinned catalog: rebuilding from GeoNames', file=sys.stderr)
     started = time.time()
     countries = [(r[0], r[4]) for r in csv.reader((s for s in lines('countryInfo.txt') if s and not s.startswith('#')), delimiter='\t') if len(r) > 4 and len(r[0]) == 2]
     subset = os.environ.get('GEOGRAPHY_COUNTRIES')

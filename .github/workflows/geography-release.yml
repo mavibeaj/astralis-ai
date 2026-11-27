@@ -1,0 +1,55 @@
+name: Geography catalog release
+# Builds the world GeoNames catalog ONCE and publishes it as a versioned, SHA-256-pinned
+# GitHub Release asset. Deploy builds then install that bundle (scripts/fetch-geography-release.py)
+# instead of re-importing 5.66 M places on every narrative/UI commit.
+#
+# Started only by a person: pushing a tag `geo-YYYY.MM.DD` (or Run workflow once this file is on
+# the default branch). It publishes public content (a release with CC BY 4.0 GeoNames data),
+# so agents do not push these tags without the founder's approval. Uses GITHUB_TOKEN only.
+on:
+  push:
+    tags: ['geo-*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      GEOGRAPHY_REBUILD: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - name: World GeoNames import
+        run: python3 scripts/build-geography.py
+      - name: Validate catalog (incl. rural Peru)
+        run: node --test tests/geography-catalog.test.mjs
+      - name: Package and hash
+        id: pkg
+        run: |
+          tag="${GITHUB_REF_NAME}"; case "$tag" in geo-*) ;; *) tag="geo-$(date -u +%Y.%m.%d)-manual";; esac
+          mkdir -p bundle && cp -r public/geography bundle/ && cp geography-stats.json bundle/
+          tar -czf geography.tar.gz -C bundle geography geography-stats.json
+          sum=$(sha256sum geography.tar.gz | cut -d' ' -f1); bytes=$(stat -c %s geography.tar.gz)
+          url="https://github.com/${{ github.repository }}/releases/download/$tag/geography.tar.gz"
+          jq -n --arg v "$tag" --arg u "$url" --arg s "$sum" --argjson b "$bytes" --arg c "${{ github.sha }}" \
+            --slurpfile st geography-stats.json \
+            '{version:$v,url:$u,sha256:$s,bytes:$b,builtFromCommit:$c,source:"geonames:world (CC BY 4.0)",countries:$st[0].countries,places:$st[0].places}' > geography.lock.json
+          cat geography.lock.json
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Publish release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ steps.pkg.outputs.tag }}"
+          gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --prerelease --title "Geography catalog $tag" \
+            --notes "GeoNames world catalog (CC BY 4.0) for Astralis AI. Pin it by committing the attached geography.lock.json."
+          gh release upload "$tag" geography.tar.gz geography.lock.json --clobber
+      - name: Summary
+        run: |
+          { echo '## Geography catalog'; echo 'Commit this file as `geography.lock.json`:'; echo '```json'; cat geography.lock.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

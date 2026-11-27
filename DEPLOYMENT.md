@@ -35,3 +35,36 @@ Settings to confirm in Cloudflare Pages → astralis-ai → Settings → Build (
 `npm run build:app` (plain `next build`) and `npm run build:fixture` are for local development only.
 If a deployment shows "El catálogo de lugares no está disponible", the catalog was not published:
 check the Cloudflare build log for the "Geography gate" line.
+
+## Deploy recovery (block 3, 27 Nov 2026)
+
+### What the evidence shows (Cloudflare log not read)
+The build log is only on the Cloudflare dashboard. No agent has a Cloudflare session, and no agent signs in on the founder's behalf. What GitHub's check runs show:
+
+| Fact | Source |
+|---|---|
+| 9 of 22 commits on `claude/beta-readiness` ended "Deployed successfully". 12 stayed "Building" forever (superseded by a newer push; Cloudflare builds one commit at a time). **c5c8ccb is the only "Build failed".** | `Cloudflare Pages` check runs |
+| c5c8ccb changed only tests, a test fixture and docs. Build inputs (`package*.json`, `scripts/build-geography.py`, `src/`) were identical to e8d61da, which deployed successfully. | `git diff e8d61da c5c8ccb --stat` |
+| A full world build takes ~10 min on a GitHub runner (the whole job takes 13–15 min). It downloads ~250 GeoNames zips and writes 1.15 GB in 6,018 files. On Cloudflare a successful deploy took 21–29 min from queue to done. | Geography world import runs. Check-run times |
+
+**Most likely cause:** the per-build GeoNames import, which is long and depends on the network. Either the build hit Cloudflare's time limit or a GeoNames download failed. Identical inputs produced a success just before, so a code error is unlikely. **This is a hypothesis.** The log confirms it.
+
+**Founder, to read the log (2 min):** open PR #9 → Checks → *Cloudflare Pages* → *View logs* (or Cloudflare dashboard → Workers & Pages → astralis-ai → Deployments → the failed c5c8ccb deployment). The last 30 lines name the failing step. If it is a GeoNames download error or the time limit, the fix below removes both.
+
+### Fix: geography on its own release cycle
+- `scripts/build-geography.py` installs the catalog pinned in `geography.lock.json` (URL + SHA-256) via `scripts/fetch-geography-release.py` and skips the import. One ~289 MB download from GitHub replaces ~250 GeoNames downloads and the processing. A hash mismatch is a hard failure, never a silent fallback. Without a lock file the old behaviour is unchanged (rebuild).
+- `.github/workflows/geography-release.yml` builds the world catalog once, validates it (incl. rural Peru) and publishes `geography.tar.gz` + `geography.lock.json` as a GitHub prerelease. It uses `GITHUB_TOKEN` only: no new credentials, no cost.
+- Narrative or UI commits no longer touch GeoNames. The catalog changes only when someone cuts a new `geo-*` release and commits the new lock.
+- Tests: `tests/geography-release.test.mjs` (install, hash refusal, no lock → rebuild, unsafe tar member refused). Local end-to-end: lock → build → byte-identical catalog.
+
+**Activation needs one founder decision.** A release is public content, so agents do not create it unasked. When you approve, either push the tag yourself or tell Claude to:
+```
+git tag geo-2026.11.27 origin/claude/block3 && git push origin geo-2026.11.27
+```
+Then copy `geography.lock.json` from the release (or from the job summary) to the repo root and commit it on the branch Cloudflare builds.
+
+### Fallback if Cloudflare still cannot build: Wrangler from Actions (founder action)
+This builds in GitHub Actions and uploads `out/` with `wrangler pages deploy`. It needs a Cloudflare API token that **only the founder creates and stores**. Never paste it in chat or a file:
+1. Cloudflare → My Profile → API Tokens → Create Token → *Custom*: permission **Account · Cloudflare Pages · Edit**, limited to the account that owns `astralis-ai`.
+2. GitHub → repo Settings → Secrets and variables → Actions → *New repository secret*: `CLOUDFLARE_API_TOKEN` (the token) and `CLOUDFLARE_ACCOUNT_ID` (shown on the Cloudflare dashboard sidebar).
+3. Tell Claude the secrets exist. The deploy workflow will reference them by name only. Cloudflare Pages Free covers this, at no cost.
