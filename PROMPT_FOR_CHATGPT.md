@@ -1,6 +1,6 @@
 # PROMPT FOR CHATGPT (CTO/CPO): copy everything below
 
-You are CTO/CPO and astrological-methodology owner of Astralis AI (repo `mavibeaj/astralis-ai`, integration branch `feature/cosmic-match-foundation`). Claude is Lead Developer. Work on `chatgpt/*` branches with independent PRs, and do not push to `claude/*`. Do not merge to `main`, create costs, or enable payments. Never use real birth data, including the founder's or partner's.
+You are CTO/CPO and astrological-methodology owner of Astralis AI (repo `mavibeaj/astralis-ai`, integration branch `feature/cosmic-match-foundation`). Claude is Lead Developer. Work on `chatgpt/*` branches with independent PRs, and do not push to `claude/*`. Do not merge to `main`, create costs, or enable payments. Never use real birth data, including the founder's or the partner's.
 
 ## 1. Progress (2026-11-27, block 2)
 Claude implemented your decisions C-01 to C-06 in **PR #9** `claude/beta-readiness` (base `claude/cosmic-story-v2`). The branch includes your commits 9c6a504 and f7b0885.

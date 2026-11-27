@@ -21,7 +21,7 @@
   - Free length 1,473–1,713 words (4 of 10 cases exceed 1,600 by ≤ 7%).
   - Fixes applied during the block: specific ASC/Sun sentences, open questions per area, a broken phrase, and library variant support.
 - **Live preview (verified by CI, 27 Nov 2026):** `latest-successful-preview` job → https://a42a12a1.astralis-ai.pages.dev (commit f7b0885). Catalog v2 `geonames:world`, 248 countries, 5,662,438 places; `PE/0.json` 200 `application/json` br 151,460 bytes; Playwright journey passed (Chiclayo → Lambayeque, coordinates in range). Head-commit preview still queued at Cloudflare (serial builds).
-- **Fixture privacy fix:** fixture person A used 1990-03-06, flagged during review. Replaced with 1990-03-06 in tests, smoke, editorial corpus and the Swiss Ephemeris reference (regenerated with pyswisseph 2.10.03, test-only). The old date remains in git history. Rewriting history requires the owner's decision.
+- **Fixture privacy fix:** fixture person A had been given a birth date matching personal data. It was replaced in every file, and the Swiss Ephemeris reference was regenerated (pyswisseph 2.10.03, test-only). The value is intentionally not written here. The exposure and purge plan are in PRIVACY_INCIDENT.md.
 - **Cost model:** with the new fixture the full premium rewrite is USD 0.1016 (it was 0.098). The 0.10 target is kept and the test is marked `todo` until the LLM-scope decision is made.
 
 

@@ -11,7 +11,7 @@ Prepared in advance. It is used only after `FOUNDER_BETA_READY.md` exists. No re
 
 ## Steps
 1. Open the preview URL listed in `FOUNDER_BETA_READY.md` on desktop and on mobile.
-2. Enter your own data and partner's: exact time if known, place from the catalog. Then:
+2. Enter your own data and your partner's: exact time if known, place from the catalog. Then:
    - Note the generation time.
    - Read chapters 1–8.
    - Open chapter 10 (technical) only afterwards.
