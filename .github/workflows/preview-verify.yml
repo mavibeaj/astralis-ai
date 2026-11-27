@@ -70,7 +70,7 @@ jobs:
         run: |
           shas=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits?per_page=100" --jq '[.[].sha] | reverse | .[]'; echo "${{ github.event.pull_request.base.sha }}")
           for sha in $shas; do
-            out=$(gh api "repos/${{ github.repository }}/commits/$sha/check-runs" --jq '.check_runs[] | select(.name=="Cloudflare Pages" and .conclusion=="success") | .output.summary' | head -1)
+            out=$(gh api "repos/${{ github.repository }}/commits/$sha/check-runs" --jq '.check_runs[] | select(.name=="Cloudflare Pages" and .conclusion=="success") | .output.summary | gsub("\n"; " ")' | head -1)
             url=$(printf '%s' "$out" | grep -o "https://[a-z0-9-]*\.astralis-ai\.pages\.dev" | head -1)
             if [ -n "$url" ]; then echo "url=$url" >> "$GITHUB_OUTPUT"; echo "sha=$sha" >> "$GITHUB_OUTPUT"; echo "Newest successful preview: $url (commit $sha)"; exit 0; fi
           done
