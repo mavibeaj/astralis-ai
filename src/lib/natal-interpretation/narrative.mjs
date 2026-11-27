@@ -6,7 +6,10 @@ import {sampler, aspectPersists} from './uncertainty.mjs';
 
 export const NARRATIVE_VERSION = 'cosmic-story-0.1';
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
-const fill = (s, map) => s.replace(/\{(\w+)\}/g, (_, k) => map[k] ?? '');
+const hash = s => {let h = 2166136261; for (const ch of s) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0; return h;};
+// Library fields may be a string or an array of variants; the variant is chosen deterministically from the evidence id.
+const variant = (v, key) => Array.isArray(v) ? v[hash(key) % v.length] : v;
+const fill = (s, map) => (s ?? '').replace(/\{(\w+)\}/g, (_, k) => map[k] ?? '');
 const words = s => (s.match(/[\p{L}\p{N}’']+/gu) ?? []).length;
 
 const TITLES = {
@@ -51,7 +54,7 @@ export function personReading(ev, {lang = 'es', name, premium = false, relations
     const ids = ['placement:Sun'];
     if (sun.house) {parts.push(es ? `Esa energía tiende a dirigirse hacia ${HOUSES.es[sun.house - 1]}.` : `That energy tends to flow toward ${HOUSES.en[sun.house - 1]}.`);}
     const st = ev.stelliums.find(s => s.bodies.includes('Sun'));
-    if (st) {parts.push(es ? `Además, varios planetas se reúnen en ${sn(st.sign)}, lo que intensifica este tono.` : `Several planets also gather in ${sn(st.sign)}, intensifying this tone.`); ids.push(st.id);}
+    if (st && premium) {parts.push(es ? `Además, varios planetas se reúnen en ${sn(st.sign)}, lo que intensifica este tono.` : `Several planets also gather in ${sn(st.sign)}, intensifying this tone.`); ids.push(st.id);}
     if (premium) {const a = takeAsp(aspFor('Sun')); if (a) {parts.push(cap(aspectText(a, lang)) + '.'); ids.push(a.id);}}
     add(0, parts, ids);
   }
@@ -81,7 +84,8 @@ export function personReading(ev, {lang = 'es', name, premium = false, relations
     const parts = [], ids = [];
     if (P.Ascendant) {
       parts.push(es ? `Con el Ascendente en ${sn(P.Ascendant.sign)}, la primera impresión que transmite suele ser ${phrase(P.Ascendant.sign, ['style', 'gift'])}.` : `With the Ascendant in ${sn(P.Ascendant.sign)}, the first impression they give tends to be ${phrase(P.Ascendant.sign, ['style', 'gift'])}.`);
-      parts.push(P.Ascendant.element === sun?.element ? (es ? 'Lo que muestra y lo que es por dentro suelen parecerse.' : 'What they show and who they are inside tend to match.') : (es ? `Quienes le conocen poco podrían percibir algo distinto de lo que ${N} vive por dentro.` : `People who know them a little might perceive something different from what ${N} lives inside.`));
+      const el = k => ELEMENT_TEXT[P[k].element][lang];
+      if (sun) parts.push(P.Ascendant.element === sun.element ? (es ? `Ascendente y Sol comparten el elemento ${el('Sun').name}, así que lo que muestra y lo que es por dentro suelen parecerse.` : `Ascendant and Sun share the element ${P.Ascendant.element}, so what they show and who they are inside tend to match.`) : (es ? `Quienes le conocen poco podrían ver primero ese lado de ${el('Ascendant').theme} (${sn(P.Ascendant.sign)}) antes de descubrir su Sol en ${sn(sun.sign)}, más ligado a ${el('Sun').theme}.` : `People who know them a little might first see that side of ${el('Ascendant').theme} (${sn(P.Ascendant.sign)}) before discovering their Sun in ${sn(sun.sign)}, more linked to ${el('Sun').theme}.`));
       ids.push('placement:Ascendant', ...(sun ? ['placement:Sun'] : []));
     } else {
       parts.push(es ? 'Sin la hora de nacimiento no podemos calcular el Ascendente, que describe la primera impresión.' : 'Without the birth time we cannot calculate the Ascendant, which describes first impressions.');
@@ -113,7 +117,7 @@ export function personReading(ev, {lang = 'es', name, premium = false, relations
     const parts = [], ids = sun ? ['placement:Sun'] : [];
     const need = sun ? phrase(sun.sign, ['need']) : null;
     if (need) parts.push(es ? `Lo que más le motiva, según su Sol: ${need}.` : `What motivates them most, according to their Sun: ${need}.`);
-    if (P.Midheaven) {parts.push(es ? `En lo vocacional, el Medio Cielo en ${sn(P.Midheaven.sign)} apunta a metas que piden ${S(P.Midheaven.sign).gift}.` : `Vocationally, the Midheaven in ${sn(P.Midheaven.sign)} points to goals that call for ${S(P.Midheaven.sign).gift}.`); ids.push('placement:Midheaven');}
+    if (premium && P.Midheaven) {parts.push(es ? `En lo vocacional, el Medio Cielo en ${sn(P.Midheaven.sign)} apunta a metas que piden ${S(P.Midheaven.sign).gift}.` : `Vocationally, the Midheaven in ${sn(P.Midheaven.sign)} points to goals that call for ${S(P.Midheaven.sign).gift}.`); ids.push('placement:Midheaven');}
     if (premium && P.Jupiter) {parts.push(es ? `Con Júpiter en ${sn(P.Jupiter.sign)}, crece a través de ${S(P.Jupiter.sign).gift}.` : `With Jupiter in ${sn(P.Jupiter.sign)}, they grow through ${S(P.Jupiter.sign).gift}.`); ids.push('placement:Jupiter');}
     add(5, parts, ids);
   }
@@ -164,7 +168,7 @@ export function personReading(ev, {lang = 'es', name, premium = false, relations
     const parts = [], ids = [];
     if (P.NorthNode) {parts.push(es ? `Su Nodo Norte en ${sn(P.NorthNode.sign)} señala como camino de crecimiento ${S(P.NorthNode.sign).gift}.` : `Their North Node in ${sn(P.NorthNode.sign)} points to a growth path of ${S(P.NorthNode.sign).gift}.`); ids.push('placement:NorthNode');}
     const less = ev.balance.lessRepresented[0];
-    if (less) {parts.push(es ? `El elemento menos representado en su carta disponible es ${ELEMENT_TEXT[less].es.name}; explorar ${ELEMENT_TEXT[less].es.lack} podría ser terreno fértil, sin que indique una carencia.` : `The least represented element in their available chart is ${less}; exploring ${ELEMENT_TEXT[less].en.lack} could be fertile ground, without implying a lack.`); ids.push(`less:${less}`);}
+    if (less) {parts.push(es ? `El elemento menos representado en su carta disponible es ${ELEMENT_TEXT[less].es.name}: un camino de crecimiento podría ser ${ELEMENT_TEXT[less].es.lack}, sin que eso indique una carencia.` : `The least represented element in their available chart is ${less}: a growth path could be ${ELEMENT_TEXT[less].en.lack}, without implying a lack.`); ids.push(`less:${less}`);}
     if (premium && P.Saturn) {parts.push(es ? `Saturno en ${sn(P.Saturn.sign)} indica dónde construye madurez con el tiempo: ${S(P.Saturn.sign).gift}.` : `Saturn in ${sn(P.Saturn.sign)} shows where maturity is built over time: ${S(P.Saturn.sign).gift}.`); ids.push('placement:Saturn');}
     add(10, parts, ids);
   }
@@ -221,6 +225,11 @@ function crossAspects(evA, evB) {
   }
   return out.sort((p, q) => (CROSS_PAIRS[q.key] ? 1 : 0) - (CROSS_PAIRS[p.key] ? 1 : 0) || q.priority - p.priority || p.id.localeCompare(q.id));
 }
+// Open questions for daily-life areas without evidence (Gate 4: questions, not conclusions).
+const OPEN_Q = {
+  es: {emotional: '¿Qué necesita cada uno para sentirse acompañado o acompañada en un mal día?', communication: '¿Cómo prefiere cada uno hablar de un tema difícil: enseguida o con tiempo?', affection: '¿Qué gesto cotidiano le hace sentir más querido o querida a cada uno?', intimacy: '¿Qué ritmo de cercanía le resulta cómodo a cada uno?', trust: '¿Qué hace que cada uno sienta que puede confiar plenamente?', conflict: '¿Qué ayuda a cada uno a calmarse antes de retomar una discusión?', living: '¿Cómo imagina cada uno un día cotidiano compartido?', values: '¿Qué significa para cada uno la seguridad material?', family: '¿Qué lugar ocupa la familia en los planes de cada uno?', independence: '¿Cuánto espacio propio necesita cada uno para sentirse bien?', commitment: '¿Qué significa comprometerse para cada uno?', growth: '¿En qué le gustaría a cada uno crecer con apoyo del otro?'},
+  en: {emotional: 'What does each of you need to feel accompanied on a bad day?', communication: 'How does each of you prefer to discuss a hard topic: right away or with time?', affection: 'Which everyday gesture makes each of you feel most loved?', intimacy: 'What pace of closeness feels comfortable to each of you?', trust: 'What makes each of you feel you can fully trust?', conflict: 'What helps each of you calm down before returning to an argument?', living: 'How does each of you picture an ordinary shared day?', values: 'What does material security mean to each of you?', family: 'What place does family have in each of your plans?', independence: 'How much personal space does each of you need to feel well?', commitment: 'What does commitment mean to each of you?', growth: 'Where would each of you like to grow with the other\'s support?'},
+};
 const elementRelation = (e1, e2) => e1 === e2 ? 'same' : [e1, e2].sort().join('|') === 'air|fire' || [e1, e2].sort().join('|') === 'earth|water' ? 'complementary' : 'different';
 
 // Everyday contexts per point, used to make generic cross readings concrete.
@@ -255,7 +264,7 @@ function crossCard(c, {lang, names, relationship, evA, evB}) {
       hard: {story: `{A}'s ${art[c.a]}${where} and {B}'s ${art[c.b]}${whereB} may ask for different things, ${{same: 'even though they share the same elemental climate', complementary: 'even though their signs come from elements that tend to complement each other', different: 'and their signs also come from different climates'}[rel]}`, daily: `it may show in {A}'s ${ctx[c.a]} versus {B}'s ${ctx[c.b]}`, misunderstanding: 'assuming the other reacts the same way', needX: '{A} may need to explain what matters to them here', needY: '{B} may need to do the same from their side', action: 'talk about this topic without looking for who is right'}};
     map.A = names[0]; map.B = names[1]; map.X = names[0]; map.Y = names[1];
   }
-  const t = src[tone];
+  const t = Object.fromEntries(Object.entries(src[tone]).map(([k, v]) => [k, variant(v, c.id + k)]));
   const f = s => s ? cap(fill(s, map)) : undefined;
   const care = c.tone === 'mixed' ? f(src.hard?.action ?? (es ? 'cuiden que esa intensidad compartida no se convierta en presión' : 'make sure that shared intensity does not turn into pressure')) + '.' : undefined;
   return {id: c.id, key: c.key, area: lib?.area ?? 'general', tone: c.tone, title: src.title[tone === 'easy' ? 0 : 1], story: f(t.story) + '.', daily: f(t.daily) + '.',
@@ -282,7 +291,7 @@ export function coupleStory(evA, evB, {lang = 'es', names = ['A', 'B'], relation
   const bridges = {
     1: dA ? (es ? `Antes de mirar el vínculo, empecemos por ${names[0]}: una carta donde predomina ${E[dA].es.name} y ${modTxt(evA.balance.dominantModality)}.` : `Before looking at the bond, let us begin with ${names[0]}: a chart where ${dA} prevails, with ${modTxt(evA.balance.dominantModality)}.`) : (es ? `Empecemos por ${names[0]}, con la información disponible.` : `Let us begin with ${names[0]}, with the information available.`),
     2: dB ? (es ? `Ahora, ${names[1]}. ${dA === dB ? `Su carta comparte el predominio de ${E[dB].es.name}, lo que anticipa un lenguaje común.` : `Su carta tiene otro clima, con predominio de ${E[dB].es.name}, lo que anticipa una conversación entre estilos distintos.`}` : `Now, ${names[1]}. ${dA === dB ? `Their chart shares the prevalence of ${dB}, hinting at a common language.` : `Their chart has another climate, with ${dB} prevailing, hinting at a dialogue between different styles.`}`) : (es ? `Ahora, ${names[1]}, con la información disponible.` : `Now, ${names[1]}, with the information available.`),
-    3: es ? 'Con ambos universos sobre la mesa, esta es la historia que dibujan juntos.' : 'With both universes on the table, this is the story they draw together.',
+    3: es ? `Con ambos universos sobre la mesa, esta es la historia de «${title}».` : `With both universes on the table, this is the story of "${title}".`,
     4: affinities.length ? (es ? `Estas son ${affinitiesAll.length === 1 ? 'la afinidad' : `las ${Math.min(affinitiesAll.length, affinities.length)} afinidades más claras`} sustentadas por contactos reales entre sus cartas.` : `These are the clearest ${affinities.length === 1 ? 'affinity' : 'affinities'} supported by real contacts between their charts.`) : '',
     5: tensions.length ? (es ? 'Y estas son las diferencias que conviene conocer, no para temerlas sino para conversarlas.' : 'And these are the differences worth knowing, not to fear them but to talk about them.') : '',
     6: es ? 'Así podrían verse esas afinidades y diferencias en el día a día.' : 'This is how those affinities and differences might look day to day.',
@@ -331,7 +340,7 @@ export function coupleStory(evA, evB, {lang = 'es', names = ['A', 'B'], relation
         text: es ? `${body} de ${names[0]} en ${sn(pa.sign)} y de ${names[1]} en ${sn(pb.sign)}: ${r === 'same' ? 'un estilo parecido en este terreno' : r === 'complementary' ? 'estilos que pueden complementarse' : 'estilos distintos que conviene conocer'} (lectura secundaria por signos, sin un aspecto que la confirme).` : `${body} of ${names[0]} in ${sn(pa.sign)} and of ${names[1]} in ${sn(pb.sign)}: ${r === 'same' ? 'a similar style here' : r === 'complementary' ? 'styles that may complement each other' : 'different styles worth getting to know'} (secondary sign-based reading, not confirmed by an aspect).`,
         evidence: [`A:placement:${area.compare}`, `B:placement:${area.compare}`]};
     }
-    return {key: area.key, title: area[lang], status: 'conversation', tone: 'neutral', text: es ? 'No hay evidencia astrológica suficiente en este terreno: es un tema para conversar, no una conclusión.' : 'There is not enough astrological evidence here: it is a topic to discuss, not a conclusion.', evidence: []};
+    return {key: area.key, title: area[lang], status: 'conversation', tone: 'neutral', text: (es ? 'Sus cartas no ofrecen evidencia suficiente aquí; mejor una pregunta abierta: ' : 'Their charts offer no sufficient evidence here; an open question instead: ') + OPEN_Q[lang][area.key], evidence: []};
   });
   // Chapter 7 — advice, adapted to the relationship.
   const relWord = es ? {partner: 'como pareja', crush: 'mientras se conocen', friendship: 'como amigos'}[relationship] : {partner: 'as a couple', crush: 'while getting to know each other', friendship: 'as friends'}[relationship];

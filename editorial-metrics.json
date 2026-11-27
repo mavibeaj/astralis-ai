@@ -1,0 +1,224 @@
+[
+ {
+  "label": "C01 Cartas similares (mismo elemento predominante) · pareja · ES",
+  "words": 1672,
+  "personWords": [
+   338,
+   299
+  ],
+  "specificity": 35.2,
+  "sharedAcrossCases": 24.1,
+  "crossContacts": 40,
+  "affinities": 3,
+  "tensions": 2,
+  "genericCards": 0,
+  "dailyEvidence": 8,
+  "dailySigns": 3,
+  "dailyConversation": 1,
+  "sectionsWithEvidence": 100,
+  "forbidden": 0,
+  "romanticInFriendship": null,
+  "uncertainty": []
+ },
+ {
+  "label": "C02 Cartas contrastantes (elementos sin complementariedad) · pareja · ES",
+  "words": 1622,
+  "personWords": [
+   327,
+   360
+  ],
+  "specificity": 32.1,
+  "sharedAcrossCases": 28.4,
+  "crossContacts": 44,
+  "affinities": 3,
+  "tensions": 2,
+  "genericCards": 0,
+  "dailyEvidence": 9,
+  "dailySigns": 2,
+  "dailyConversation": 1,
+  "sectionsWithEvidence": 100,
+  "forbidden": 0,
+  "romanticInFriendship": null,
+  "uncertainty": []
+ },
+ {
+  "label": "C03 Mismo signo solar, configuraciones distintas · crush · ES",
+  "words": 1600,
+  "personWords": [
+   327,
+   319
+  ],
+  "specificity": 30.9,
+  "sharedAcrossCases": 19.1,
+  "crossContacts": 31,
+  "affinities": 3,
+  "tensions": 2,
+  "genericCards": 0,
+  "dailyEvidence": 9,
+  "dailySigns": 2,
+  "dailyConversation": 1,
+  "sectionsWithEvidence": 100,
+  "forbidden": 0,
+  "romanticInFriendship": null,
+  "uncertainty": []
+ },
+ {
+  "label": "C04 Horas conocidas · pareja · EN",
+  "words": 1531,
+  "personWords": [
+   319,
+   278
+  ],
+  "specificity": 33.3,
+  "sharedAcrossCases": 0,
+  "crossContacts": 33,
+  "affinities": 3,
+  "tensions": 2,
+  "genericCards": 0,
+  "dailyEvidence": 9,
+  "dailySigns": 1,
+  "dailyConversation": 2,
+  "sectionsWithEvidence": 100,
+  "forbidden": 0,
+  "romanticInFriendship": null,
+  "uncertainty": []
+ },
+ {
+  "label": "C05 Hora desconocida (persona A) · pareja · ES",
+  "words": 1651,
+  "personWords": [
+   325,
+   361
+  ],
+  "specificity": 30.9,
+  "sharedAcrossCases": 30,
+  "crossContacts": 22,
+  "affinities": 3,
+  "tensions": 2,
+  "genericCards": 0,
+  "dailyEvidence": 6,
+  "dailySigns": 0,
+  "dailyConversation": 6,
+  "sectionsWithEvidence": 100,
+  "forbidden": 0,
+  "romanticInFriendship": null,
+  "uncertainty": [
+   "A:ascendant",
+   "A:midheaven",
+   "A:houses"
+  ]
+ },
+ {
+  "label": "C06 Ambas horas desconocidas · amistad · EN",
+  "words": 1599,
+  "personWords": [
+   300,
+   300
+  ],
+  "specificity": 36.8,
+  "sharedAcrossCases": 0,
+  "crossContacts": 16,
+  "affinities": 3,
+  "tensions": 2,
+  "genericCards": 4,
+  "dailyEvidence": 1,
+  "dailySigns": 0,
+  "dailyConversation": 10,
+  "sectionsWithEvidence": 95.8,
+  "forbidden": 0,
+  "romanticInFriendship": 0,
+  "uncertainty": [
+   "A:moon-sign",
+   "A:ascendant",
+   "A:midheaven",
+   "A:houses",
+   "B:ascendant",
+   "B:midheaven",
+   "B:houses"
+  ]
+ },
+ {
+  "label": "C07 Afinidades y tensiones simultáneas · pareja · ES",
+  "words": 1579,
+  "personWords": [
+   326,
+   307
+  ],
+  "specificity": 31.8,
+  "sharedAcrossCases": 33.6,
+  "crossContacts": 33,
+  "affinities": 3,
+  "tensions": 2,
+  "genericCards": 0,
+  "dailyEvidence": 7,
+  "dailySigns": 3,
+  "dailyConversation": 2,
+  "sectionsWithEvidence": 100,
+  "forbidden": 0,
+  "romanticInFriendship": null,
+  "uncertainty": []
+ },
+ {
+  "label": "C08 Escasa evidencia (menos contactos entre 300 parejas) · crush · ES",
+  "words": 1713,
+  "personWords": [
+   353,
+   350
+  ],
+  "specificity": 37.8,
+  "sharedAcrossCases": 15.3,
+  "crossContacts": 21,
+  "affinities": 3,
+  "tensions": 2,
+  "genericCards": 2,
+  "dailyEvidence": 7,
+  "dailySigns": 3,
+  "dailyConversation": 2,
+  "sectionsWithEvidence": 100,
+  "forbidden": 0,
+  "romanticInFriendship": null,
+  "uncertainty": []
+ },
+ {
+  "label": "C09 Amistad · ES",
+  "words": 1473,
+  "personWords": [
+   308,
+   291
+  ],
+  "specificity": 33.3,
+  "sharedAcrossCases": 15.7,
+  "crossContacts": 36,
+  "affinities": 3,
+  "tensions": 2,
+  "genericCards": 0,
+  "dailyEvidence": 7,
+  "dailySigns": 3,
+  "dailyConversation": 1,
+  "sectionsWithEvidence": 100,
+  "forbidden": 0,
+  "romanticInFriendship": 0,
+  "uncertainty": []
+ },
+ {
+  "label": "C10 Crush · EN",
+  "words": 1568,
+  "personWords": [
+   305,
+   352
+  ],
+  "specificity": 31.5,
+  "sharedAcrossCases": 0,
+  "crossContacts": 33,
+  "affinities": 3,
+  "tensions": 2,
+  "genericCards": 0,
+  "dailyEvidence": 8,
+  "dailySigns": 2,
+  "dailyConversation": 2,
+  "sectionsWithEvidence": 100,
+  "forbidden": 0,
+  "romanticInFriendship": null,
+  "uncertainty": []
+ }
+]
