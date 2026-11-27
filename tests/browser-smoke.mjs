@@ -1,56 +1,125 @@
+// End-to-end journey on the exported site (out/), desktop and mobile.
+// Requires a catalog containing PE and JP (GeoNames build or offline fixture).
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
-const server=spawn('python3',['-m','http.server','4173','--bind','127.0.0.1','--directory','out'],{stdio:'ignore'});
+const server = spawn('python3', ['-m', 'http.server', '4173', '--bind', '127.0.0.1', '--directory', 'out'], {stdio: 'ignore'});
+const URL_ = 'http://127.0.0.1:4173';
 let browser;
-try{
- for(let i=0;i<50;i++){try{if((await fetch('http://127.0.0.1:4173')).ok)break}catch{}await new Promise(r=>setTimeout(r,200));}
- browser=await chromium.launch(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{});
- for(const viewport of [{width:1280,height:900},{width:390,height:844}]){
-  const page=await browser.newPage({viewport,acceptDownloads:true});
-  const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://127.0.0.1:4173');
-  await page.getByRole('button',{name:'ES',exact:true}).click();
-  await page.getByRole('button',{name:'Pareja',exact:true}).click();
-  const first=page.locator('.location-picker').first();
-  await first.getByRole('option',{name:'Perú',exact:true}).waitFor({state:'attached'});
-  await first.getByLabel('País de nacimiento').selectOption('PE');
-  await first.getByPlaceholder('Escribe al menos 2 letras').fill('Chiclayo');
-  await first.getByRole('button',{name:/Chiclayo.*Lambayeque/i}).first().click();
-  assert.equal(await page.locator('#a-zone').inputValue(),'America/Lima');
-  {const lat=Number(await page.locator('#a-lat').inputValue());assert.ok(lat>-6.9&&lat<-6.6,'Chiclayo latitude '+lat)}
-  await first.getByText(/✓ Chiclayo/).waitFor();
-  // Non-existent place: explicit empty state, manual path offered.
-  await first.getByPlaceholder('Escribe al menos 2 letras').fill('Zzqxw');
-  await first.getByText('No encontramos ese lugar',{exact:false}).waitFor();
-  await page.getByRole('button',{name:'Probar con datos ficticios'}).click();
-  // Picker resynchronises with the fictional profile (GB) instead of keeping Peru.
-  {const c=await first.getByLabel('País de nacimiento').inputValue();assert.notEqual(c,'PE','picker kept the previous country');if(await first.locator('option[value="GB"]').count())assert.equal(c,'GB')}
-  await page.getByRole('button',{name:'Descubrir nuestra conexión'}).click();
-  await page.getByRole('heading',{name:'Índice simbólico experimental'}).waitFor();
-  await page.getByRole('button',{name:'Ver demostración gratuita'}).click();
-  await page.getByText('Vista previa sin IA generativa.',{exact:false}).waitFor();
-  assert.equal(await page.locator('.premium-panel article').count(),5);
-  const download=page.waitForEvent('download');
-  await page.getByRole('button',{name:'Descargar tarjeta · 9:16'}).click();
-  assert.match((await download).suggestedFilename(),/\.png$/);
-  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
-  assert.deepEqual(errors,[]);
-  await page.screenshot({path:'browser-'+viewport.width+'.png',fullPage:true});
+
+async function open(viewport, routeCatalog404 = false) {
+  const page = await browser.newPage({viewport, acceptDownloads: true, locale: 'es-PE'});
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  page.on('console', m => {if (m.type() === 'error' && !/404|Failed to load resource/.test(m.text())) errors.push(m.text());});
+  if (routeCatalog404) await page.route('**/geography/**', r => r.fulfill({status: 404, contentType: 'text/html', body: '<!doctype html><p>404</p>'}));
+  await page.goto(URL_);
+  await page.getByRole('button', {name: 'ES', exact: true}).click();
+  return {page, errors};
+}
+const noOverflow = async page => assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'horizontal overflow');
+async function pickPlace(page, prefix, country, query, match) {
+  const picker = page.locator('.location-picker');
+  await picker.getByRole('option', {name: country, exact: true}).waitFor({state: 'attached'});
+  await picker.getByLabel('País de nacimiento').selectOption({label: country});
+  await picker.getByLabel('Ciudad, distrito o pueblo').fill(query);
+  await picker.getByRole('button', {name: match}).first().click();
+  await picker.getByText('✓', {exact: false}).waitFor();
+  return {zone: await page.locator(`#${prefix}-zone`).inputValue(), lat: Number(await page.locator(`#${prefix}-lat`).inputValue()), lon: Number(await page.locator(`#${prefix}-lon`).inputValue())};
+}
+
+try {
+  for (let i = 0; i < 50; i++) {try {if ((await fetch(URL_)).ok) break;} catch {} await new Promise(r => setTimeout(r, 200));}
+  browser = await chromium.launch(process.env.CHROMIUM_PATH ? {executablePath: process.env.CHROMIUM_PATH} : {});
+  for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) {
+    const w = viewport.width;
+    const {page, errors} = await open(viewport);
+    await page.getByRole('heading', {level: 1}).waitFor();
+    await noOverflow(page);
+    await page.screenshot({path: `browser-${w}-landing.png`, fullPage: true});
+    // Step 0: relationship
+    await page.getByRole('button', {name: 'Descubrir nuestra conexión'}).first().click();
+    await page.getByRole('radio', {name: 'Pareja'}).click();
+    await page.getByLabel('Tu nombre o apodo (opcional)').fill('Ana');
+    await page.getByLabel('Su nombre o apodo (opcional)').fill('Leo');
+    await page.getByRole('button', {name: 'Continuar'}).click();
+    // Step 1: validation, then Chiclayo from the catalog
+    await page.getByRole('button', {name: 'Continuar'}).click();
+    await page.locator('p.error[role=alert]').waitFor();
+    await page.getByLabel('Fecha de nacimiento').fill('1990-03-06');
+    await page.getByLabel('Hora de nacimiento').fill('07:45');
+    const picker = page.locator('.location-picker');
+    await picker.getByRole('option', {name: 'Perú', exact: true}).waitFor({state: 'attached'});
+    await picker.getByLabel('País de nacimiento').selectOption('PE');
+    await picker.getByLabel('Ciudad, distrito o pueblo').fill('Zzqxw');
+    await picker.getByText('No encontramos ese lugar', {exact: false}).waitFor();
+    const a = await pickPlace(page, 'a', 'Perú', 'Chiclayo', /Chiclayo.*Lambayeque/i);
+    assert.equal(a.zone, 'America/Lima');
+    assert.ok(a.lat > -6.9 && a.lat < -6.6 && a.lon > -80 && a.lon < -79.7, `Chiclayo ${a.lat},${a.lon}`);
+    await page.screenshot({path: `browser-${w}-form.png`, fullPage: true});
+    await page.getByRole('button', {name: 'Continuar'}).click();
+    // Step 2: international search
+    await page.getByLabel('Fecha de nacimiento').fill('1995-09-22');
+    await page.getByLabel('Hora de nacimiento').fill('15:30');
+    const b = await pickPlace(page, 'b', 'Japón', 'Tokyo', /^Tokyo/i);
+    assert.equal(b.zone, 'Asia/Tokyo');
+    assert.ok(b.lat > 35 && b.lat < 36.5 && b.lon > 139 && b.lon < 140.5);
+    await page.getByRole('button', {name: 'Continuar'}).click();
+    // Step 3: confirm + consent
+    await page.getByText('Chiclayo', {exact: false}).first().waitFor();
+    await page.getByRole('button', {name: 'Calcular nuestra conexión'}).click();
+    await page.locator('p.error[role=alert]').waitFor();
+    await page.getByLabel('Ambas personas son adultas', {exact: false}).check();
+    await page.getByRole('button', {name: 'Calcular nuestra conexión'}).click();
+    await page.getByText('Calculando posiciones planetarias', {exact: false}).waitFor();
+    await page.getByRole('heading', {name: 'Índice simbólico experimental'}).waitFor({timeout: 15000});
+    // Wheels come from engine data: synastry shows both charts' bodies, houses and aspects.
+    const wheel = page.locator('figure.wheel');
+    assert.ok(await wheel.locator('g.body').count() >= 20, 'synastry bodies');
+    assert.ok(await wheel.locator('line.aspect').count() > 0, 'aspects');
+    assert.ok(await wheel.locator('text.house-num').count() === 12, 'houses');
+    await wheel.locator('g.body circle.body-bg').nth(2).hover();
+    await wheel.locator('g.tooltip').waitFor();
+    await page.screenshot({path: `browser-${w}-results.png`, fullPage: true});
+    await wheel.screenshot({path: `browser-${w}-synastry-wheel.png`});
+    await page.getByRole('tab', {name: /Carta A/}).click();
+    await page.getByText('Grados exactos').click();
+    assert.ok(await page.locator('.positions td').count() >= 13);
+    // Premium demo, share card
+    await page.getByRole('button', {name: 'Ver demostración gratuita'}).click();
+    assert.equal(await page.locator('.premium-demo article').count(), 5);
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', {name: 'Descargar tarjeta · 9:16'}).click();
+    assert.match((await download).suggestedFilename(), /\.png$/);
+    await noOverflow(page);
+    // Fictional data resynchronises the picker (no stale Peru selection).
+    await page.getByRole('button', {name: 'Astralis AI'}).click();
+    await page.getByRole('button', {name: 'Probar con datos ficticios'}).click();
+    await page.getByRole('heading', {name: 'Revisa los datos'}).waitFor();
+    await page.getByRole('button', {name: 'Editar'}).first().click();
+    const c = await page.locator('#a-country').inputValue();
+    assert.notEqual(c, 'PE', 'picker kept the previous country');
+    if (await page.locator('#a-country option[value="GB"]').count()) assert.equal(c, 'GB');
+    // Unknown time on person B -> partial reading, wheels without houses for B.
+    await page.getByRole('button', {name: 'Continuar'}).click();
+    await page.getByLabel('No conozco la hora exacta').check();
+    await page.getByRole('button', {name: 'Continuar'}).click();
+    await page.getByRole('button', {name: 'Calcular nuestra conexión'}).click();
+    await page.getByRole('heading', {name: /Lectura parcial/}).waitFor({timeout: 15000});
+    await page.getByRole('tab', {name: /Carta B/}).click();
+    assert.equal(await page.locator('figure.wheel text.house-num').count(), 0);
+    await noOverflow(page);
+    assert.deepEqual(errors, []);
+    await page.close();
+  }
+  // Catalog unavailable: explicit alert and manual entry, never silent empty selectors.
+  const {page, errors} = await open({width: 390, height: 844}, true);
+  await page.getByRole('button', {name: 'Descubrir nuestra conexión'}).first().click();
+  await page.getByRole('button', {name: 'Continuar'}).click();
+  await page.locator('.notice[role=alert]').getByText('no está disponible', {exact: false}).waitFor();
+  await page.getByLabel('Lugar de nacimiento').fill('Chiclayo, Lambayeque, Perú');
+  await page.locator('#a-zone').fill('America/Lima');
+  assert.deepEqual(errors, []);
+  await page.screenshot({path: 'browser-catalog-unavailable.png', fullPage: true});
   await page.close();
- }
- // Catalog unavailable: the page must say so and fall back to manual entry, never show empty selectors silently.
- const page=await browser.newPage({viewport:{width:390,height:844}});
- const errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.route('**/geography/**',r=>r.fulfill({status:404,contentType:'text/html',body:'<!doctype html><p>404</p>'}));
- await page.goto('http://127.0.0.1:4173');
- await page.getByRole('button',{name:'ES',exact:true}).click();
- await page.getByRole('button',{name:'Pareja',exact:true}).click();
- const picker=page.locator('.location-picker').first();
- await picker.getByRole('alert').getByText('no está disponible',{exact:false}).waitFor();
- await picker.getByLabel('Lugar de nacimiento').fill('Chiclayo, Lambayeque, Perú');
- await picker.getByLabel('Zona horaria de nacimiento').fill('America/Lima');
- assert.deepEqual(errors,[]);
- await page.screenshot({path:'browser-catalog-unavailable.png',fullPage:true});
- await page.close();
-}finally{await browser?.close();server.kill();}
+} finally {await browser?.close(); server.kill();}
